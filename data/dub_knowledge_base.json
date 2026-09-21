@@ -3,6 +3,19 @@
   "product": "Modern Link Attribution & Shortening Infrastructure",
   "categories": [
     {
+      "id": "troubleshooting_links",
+      "title": "Link Redirection & Troubleshooting",
+      "articles": [
+        {
+          "id": "short_link_not_working",
+          "title": "Shortened Link Not Working or Redirection Failing",
+          "problem": "After shortening my URL from Dub, my link is not working, showing 404, or not redirecting to the destination.",
+          "solution": "If your shortened URL is failing to redirect or showing an error, check these 4 common causes:\n\n### 1. Custom Domain DNS Inactive\nIf you shortened the link using a **custom domain** (e.g. `go.yourbrand.com`), it **must** have its DNS configured in your domain registrar:\n• **Subdomain (e.g. go.brand.com):** CNAME pointing to `cname.dub.co`\n• **Root Domain (e.g. brand.com):** A Record pointing to `76.76.21.21`\n*(Tip: Share your domain name here to run a live socket DNS probe right now!)*\n\n### 2. Broken Destination URL\nDub forwards visitors directly to your original destination URL. If your target site is down, returning a `404 Not Found` or `500 Server Error`, the short link will look broken. Test your destination URL directly in a private/incognito browser window.\n\n### 3. Link Status (Archived or Expired)\nIn your Dub Dashboard under **Links**:\n• Verify the link is toggled **Active** (not Archived).\n• Check if an **Expiration Date** or **Click Limit** was previously set on the link.\n\n### 4. SSL Certificate Provisioning Delay\nIf you recently connected your custom domain, Let's Encrypt automated SSL issuance takes **5 to 15 minutes** to propagate worldwide.",
+          "keywords": ["not working", "shortening", "shortened url", "link not working", "url not working", "after shortening", "redirect failing", "broken link", "not redirecting", "404", "destination url"]
+        }
+      ]
+    },
+    {
       "id": "custom_domains",
       "title": "Custom Domains & DNS Configuration",
       "articles": [
@@ -10,35 +23,35 @@
           "id": "apex_domain_setup",
           "title": "Configuring an Apex / Root Domain (e.g. yourdomain.com)",
           "problem": "How do I configure my apex domain to work with Dub?",
-          "solution": "Add an 'A' record in your DNS provider:\n• Type: A\n• Name / Host: @ (or leave blank if registrar does not allow @)\n• Value / Target: 76.76.21.21\n• TTL: 86400 (or lowest supported / auto).\nNote: Dub automatically redirects www.yourdomain.com to your root apex domain.",
+          "solution": "Add an **A Record** in your DNS provider:\n\n| Type | Name / Host | Target Value | TTL |\n| :--- | :--- | :--- | :--- |\n| **A** | `@` (or leave blank) | `76.76.21.21` | Auto / 3600 |\n\n*Note: Dub automatically redirects `www.yourdomain.com` to your root apex domain.*",
           "keywords": ["apex domain", "root domain", "A record", "76.76.21.21", "custom domain", "dns"]
         },
         {
           "id": "subdomain_setup",
           "title": "Configuring a Subdomain (e.g. go.yourdomain.com, links.yourdomain.com)",
           "problem": "How do I configure a subdomain on Dub?",
-          "solution": "Add a 'CNAME' record in your DNS provider:\n• Type: CNAME\n• Name / Host: the subdomain prefix (e.g. 'go' for go.yourdomain.com, or 'links')\n• Value / Target: cname.dub.co\n• TTL: 86400 (or lowest supported / auto).",
+          "solution": "Add a **CNAME Record** in your DNS provider:\n\n| Type | Name / Host | Target Value | TTL |\n| :--- | :--- | :--- | :--- |\n| **CNAME** | `go` or `links` | `cname.dub.co` | Auto / 3600 |\n\nOnce added, DNS propagation takes roughly 5–15 minutes.",
           "keywords": ["subdomain", "cname", "cname.dub.co", "links", "go"]
         },
         {
           "id": "cloudflare_proxy_status",
           "title": "Cloudflare DNS: Grey Cloud (DNS Only) vs Orange Cloud (Proxied)",
           "problem": "My links are failing or throwing Error 525 / SSL handshake failed on Cloudflare.",
-          "solution": "Root Cause: Cloudflare proxying (Orange Cloud) can interfere with Dub's anycast edge SSL and geo-analytics.\nFix:\n1. Recommended: In Cloudflare DNS, set the Proxy status toggle to 'DNS Only' (Grey Cloud).\n2. If Orange Cloud is mandatory: You MUST go to Cloudflare Dashboard -> SSL/TLS -> Set encryption mode to 'Full' or 'Full (strict)'. Do NOT use 'Flexible'.",
+          "solution": "### Root Cause\nCloudflare's default proxy (**Orange Cloud**) intercepts traffic before Let's Encrypt certificates can negotiate with Dub's edge servers.\n\n### How to Fix:\n1. **Recommended (Instant):** In your Cloudflare DNS tab, change the Proxy toggle to **DNS Only** (Grey Cloud).\n2. **If Orange Cloud is mandatory:** Go to Cloudflare Dashboard ➔ **SSL/TLS** ➔ Change encryption mode to **Full** or **Full (Strict)**. *(Never use 'Flexible' with Dub)*.",
           "keywords": ["cloudflare", "orange cloud", "grey cloud", "dns only", "525", "ssl handshake failed", "flexible ssl"]
         },
         {
           "id": "ssl_certificate_pending",
           "title": "SSL Certificate Pending / ERR_SSL_PROTOCOL_ERROR",
           "problem": "My domain says 'Invalid configuration' or browser shows ERR_SSL_PROTOCOL_ERROR.",
-          "solution": "1. SSL certificates are provisioned automatically via Let's Encrypt once DNS records resolve.\n2. DNS propagation typically takes 5 to 15 minutes, but can take up to 24 hours depending on registrar TTL.\n3. Verify your DNS using dig or whatsmydns.net. If pointing to 76.76.21.21 or cname.dub.co, wait 10 minutes and click 'Refresh' in the Dub dashboard.",
+          "solution": "1. SSL certificates are generated automatically via Let's Encrypt once your DNS records resolve.\n2. Global DNS propagation typically takes **5 to 15 minutes**.\n3. Make sure your domain points to `76.76.21.21` or `cname.dub.co`. Once resolved, click **Refresh** in your Dub domain dashboard.",
           "keywords": ["ssl pending", "err_ssl_protocol_error", "certificate error", "invalid configuration", "propagation"]
         },
         {
           "id": "vercel_domain_conflict",
           "title": "Domain Previously Used on Vercel (Ownership Verification)",
           "problem": "Dub error: 'Domain is already in use by another team/project on Vercel'.",
-          "solution": "Because Dub's edge routing integrates with Vercel's Anycast infrastructure, you must verify ownership:\n1. Add a TXT verification record:\n• Type: TXT\n• Name: _vercel\n• Value: (Copy verification token displayed in your Dub dashboard)\n2. Once verified, the previous project mapping will be released.",
+          "solution": "Because Dub operates on Vercel Anycast infrastructure, verify ownership by adding a TXT record:\n\n| Type | Name / Host | Value |\n| :--- | :--- | :--- |\n| **TXT** | `_vercel` | *(Copy token from Dub dashboard)* |\n\nOnce verified, the previous project mapping will be released.",
           "keywords": ["vercel conflict", "txt record", "_vercel", "already in use", "domain conflict"]
         }
       ]
@@ -51,21 +64,21 @@
           "id": "rate_limits_tiers",
           "title": "API Rate Limits & 429 Too Many Requests",
           "problem": "I received HTTP 429 Too Many Requests when calling Dub API.",
-          "solution": "Rate Limit Thresholds (per minute):\n• Free Plan: 60 requests/min\n• Pro Plan: 600 requests/min\n• Business Plan: 1,200 requests/min\n• Enterprise / Advanced: 3,000 requests/min\n\nHow to handle:\n1. Check the 'Retry-After' response header to see exact wait time in seconds.\n2. Inspect 'X-RateLimit-Remaining' to track your budget.\n3. Implement exponential backoff in your code.\n4. For creating multiple links, use the Bulk API ('POST /links/bulk') which processes up to 100 links per request.",
+          "solution": "### Rate Limit Thresholds (per minute):\n• **Free Plan:** 60 requests/min\n• **Pro Plan:** 600 requests/min\n• **Business Plan:** 1,200 requests/min\n• **Enterprise:** 3,000+ requests/min\n\n### How to Resolve:\n1. Check the `Retry-After` header to get the exact wait time in seconds.\n2. Inspect `X-RateLimit-Remaining` to track your request quota.\n3. For creating multiple links at once, use the **Bulk API** (`POST /links/bulk`) which processes up to 100 links per single request.",
           "keywords": ["429", "rate limit", "too many requests", "retry-after", "x-ratelimit-remaining", "bulk"]
         },
         {
           "id": "link_creation_api",
           "title": "Creating Links via REST API & SDK",
           "problem": "How do I create a short link using Python or TypeScript?",
-          "solution": "Endpoint: POST https://api.dub.co/links\nHeaders: Authorization: Bearer <DUB_API_KEY>\n\nPayload JSON:\n{\n  \"url\": \"https://yourcompany.com/blog/article\",\n  \"domain\": \"go.yourdomain.com\",\n  \"key\": \"spring-sale\",\n  \"tags\": [\"marketing\", \"spring\"],\n  \"trackConversion\": true\n}\n\nPython SDK:\nfrom dub import Dub\nclient = Dub(token=\"DUB_API_KEY\")\nlink = client.links.create(request={\"url\": \"https://example.com\", \"domain\": \"go.mybrand.com\"})\nprint(link.short_link)",
-          "keywords": ["create link", "post /links", "api key", "python sdk", "typescript sdk", "short link"]
+          "solution": "### 🚀 Create Short Link via REST API\n\n**Endpoint:** `POST https://api.dub.co/links`  \n**Headers:** `Authorization: Bearer <DUB_API_KEY>`\n\n**Payload (JSON):**\n```json\n{\n  \"url\": \"https://yourcompany.com/blog/article\",\n  \"domain\": \"go.yourdomain.com\",\n  \"key\": \"spring-sale\",\n  \"tags\": [\"marketing\", \"spring\"],\n  \"trackConversion\": true\n}\n```\n\n**Python SDK Example:**\n```python\nfrom dub import Dub\n\nclient = Dub(token=\"DUB_API_KEY\")\nlink = client.links.create(request={\n    \"url\": \"https://example.com\",\n    \"domain\": \"go.mybrand.com\"\n})\nprint(link.short_link)\n```",
+          "keywords": ["create link", "post /links", "api key", "python sdk", "typescript sdk", "how to create short link"]
         },
         {
           "id": "slug_conflict_409",
           "title": "HTTP 409 Conflict: Key Already Exists",
           "problem": "API returns 409 Conflict when attempting to create a link.",
-          "solution": "A link with that exact 'key' (slug) already exists for that domain.\nOptions:\n1. If you want to update the existing link, use 'PUT /links/{linkId}' or 'PATCH /links/{linkId}'.\n2. If you want a unique random key, omit the 'key' field in your payload and Dub will generate a clean random 7-character hash.",
+          "solution": "A link with that exact **slug / key** already exists for that domain.\n\n### Options:\n1. **Update existing link:** Use `PUT /links/{linkId}` or `PATCH /links/{linkId}`.\n2. **Generate random slug:** Omit the `key` field in your payload and Dub will automatically assign a clean 7-character hash.",
           "keywords": ["409", "conflict", "slug exists", "duplicate key", "key already exists"]
         }
       ]
@@ -78,14 +91,14 @@
           "id": "webhook_events",
           "title": "Supported Webhook Events & Global Configuration",
           "problem": "Which webhook events does Dub support and how are they configured?",
-          "solution": "Supported Events:\n• 'link.created': Fired when a new short link is created.\n• 'link.updated': Fired when a link's destination URL or metadata changes.\n• 'link.deleted': Fired when a link is archived or deleted.\n• 'link.clicked': Real-time click stream with geo and device data.\n\nNote: Bulk operations (POST /links/bulk) do NOT trigger individual webhook events to prevent overwhelming downstream receiver servers.",
+          "solution": "### Supported Webhook Events:\n• `link.created` — Fired when a new short link is generated.\n• `link.updated` — Fired when destination URL or metadata changes.\n• `link.deleted` — Fired when a link is archived or deleted.\n• `link.clicked` — Real-time event stream with geolocation, device, and referrer data.\n\n*Note: Bulk link imports (`POST /links/bulk`) do NOT trigger individual webhooks to avoid flooding receiver endpoints.*",
           "keywords": ["webhooks", "link.created", "link.clicked", "events", "bulk webhooks"]
         },
         {
           "id": "webhook_signature_verification",
           "title": "Verifying Webhook HMAC SHA-256 Signatures",
           "problem": "How do I securely verify that an incoming webhook payload was sent by Dub?",
-          "solution": "Dub signs each webhook payload with your webhook secret using HMAC SHA-256.\nHeader: 'Dub-Signature'\n\nVerification Algorithm (Python):\nimport hmac, hashlib\n\ndef verify_signature(payload_bytes: bytes, signature_header: str, secret: str) -> bool:\n    expected_signature = hmac.new(secret.encode('utf-8'), payload_bytes, hashlib.sha256).hexdigest()\n    return hmac.compare_digest(expected_signature, signature_header)",
+          "solution": "Dub signs each payload with your signing secret in the `Dub-Signature` header.\n\n### Python Verification Snippet:\n```python\nimport hmac\nimport hashlib\n\ndef verify_signature(payload_bytes: bytes, signature_header: str, secret: str) -> bool:\n    expected = hmac.new(\n        secret.encode(\"utf-8\"), \n        payload_bytes, \n        hashlib.sha256\n    ).hexdigest()\n    return hmac.compare_digest(expected, signature_header)\n```",
           "keywords": ["webhook signature", "hmac", "sha256", "dub-signature", "security", "verify webhook"]
         }
       ]

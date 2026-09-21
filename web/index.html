@@ -55,9 +55,37 @@
     .markdown-body h3 {
       font-size: 1.05rem;
       font-weight: 700;
-      margin-top: 0.875rem;
-      margin-bottom: 0.4rem;
+      margin-top: 1rem;
+      margin-bottom: 0.5rem;
       color: #09090b;
+      letter-spacing: -0.01em;
+    }
+    .markdown-body strong {
+      font-weight: 700;
+      color: #09090b;
+    }
+    .markdown-body table {
+      width: 100%;
+      border-collapse: collapse;
+      margin: 0.75rem 0;
+      font-size: 0.8125rem;
+    }
+    .markdown-body th, .markdown-body td {
+      border: 1px solid #e4e4e7;
+      padding: 0.5rem 0.75rem;
+      text-align: left;
+    }
+    .markdown-body th {
+      background-color: #f4f4f5;
+      font-weight: 600;
+      color: #09090b;
+    }
+    .markdown-body tr:nth-child(even) td {
+      background-color: #fafafa;
+    }
+    .markdown-body a {
+      color: #2563eb;
+      text-decoration: underline;
     }
     .cursor-blink {
       display: inline-block;
@@ -211,6 +239,12 @@
     const chatBox = document.getElementById("chat-box");
     const userInput = document.getElementById("user-input");
     const sendBtn = document.getElementById("send-btn");
+
+    // Configure marked to render single line breaks as <br>
+    marked.setOptions({
+      breaks: true,
+      gfm: true
+    });
 
     function appendMessage(role, content, isMarkdown = false) {
       const isUser = role === "user";
