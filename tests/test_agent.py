@@ -67,7 +67,14 @@ def test_api_endpoints(client):
     assert "solution_markdown" in data
     assert "Retry-After" in data["solution_markdown"]
 
-    # 3. Web UI
+    # 3. Chat Streaming API (SSE)
+    r_stream = client.post("/api/chat/stream", json=chat_payload)
+    assert r_stream.status_code == 200
+    assert "text/event-stream" in r_stream.headers["content-type"]
+    assert "data: " in r_stream.text
+    assert "[DONE]" in r_stream.text
+
+    # 4. Web UI
     r_ui = client.get("/")
     assert r_ui.status_code == 200
     assert "Dub.co Support Co-Pilot" in r_ui.text

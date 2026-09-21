@@ -56,6 +56,11 @@ def test_dns(domain: str):
     return check_domain_dns(domain)
 
 
+import asyncio
+import json
+from fastapi.responses import StreamingResponse
+
+
 @app.post("/api/chat")
 def handle_chat(req: ChatRequest):
     """Processes user support query and returns resolution with live diagnostics."""
@@ -63,6 +68,37 @@ def handle_chat(req: ChatRequest):
         raise HTTPException(status_code=400, detail="Query cannot be empty.")
     result = engine.resolve_ticket(req.query)
     return result
+
+
+async def sse_chat_generator(query: str):
+    """Streams resolution tokens with smooth typing latency and live diagnostics."""
+    result = engine.resolve_ticket(query)
+    full_markdown = result["solution_markdown"]
+
+    # Stream chunks smoothly
+    words = full_markdown.split(" ")
+    for i, word in enumerate(words):
+        chunk = word + (" " if i < len(words) - 1 else "")
+        payload = json.dumps({"token": chunk})
+        yield f"data: {payload}\n\n"
+        await asyncio.sleep(0.015)
+
+    yield "data: [DONE]\n\n"
+
+
+@app.post("/api/chat/stream")
+async def handle_chat_stream(req: ChatRequest):
+    """Streams resolution tokens in real-time via Server-Sent Events (SSE)."""
+    if not req.query.strip():
+        raise HTTPException(status_code=400, detail="Query cannot be empty.")
+    return StreamingResponse(
+        sse_chat_generator(req.query),
+        media_type="text/event-stream",
+        headers={
+            "Cache-Control": "no-cache",
+            "Connection": "keep-alive",
+        },
+    )
 
 
 @app.get("/", response_class=HTMLResponse)

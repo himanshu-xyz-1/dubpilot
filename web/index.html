@@ -146,21 +146,73 @@
       appendMessage("user", text);
       userInput.value = "";
       sendBtn.disabled = true;
-      sendBtn.innerText = "Analyzing...";
+      sendBtn.innerText = "Diagnosing...";
+
+      // Create Assistant bubble placeholder for live stream
+      const wrapper = document.createElement("div");
+      wrapper.className = "flex items-start space-x-3";
+      const avatar = document.createElement("div");
+      avatar.className = "w-8 h-8 rounded-full flex items-center justify-center text-xs font-bold text-white shrink-0 mt-1 bg-blue-600 shadow";
+      avatar.innerText = "AI";
+
+      const bubble = document.createElement("div");
+      bubble.className = "bg-zinc-800/90 border border-zinc-700/60 rounded-2xl rounded-tl-sm p-4 text-sm text-zinc-200 max-w-[90%] leading-relaxed shadow markdown-body";
+      bubble.innerHTML = '<span class="inline-block w-2 h-4 bg-blue-400 animate-pulse align-middle"></span>';
+
+      wrapper.appendChild(avatar);
+      wrapper.appendChild(bubble);
+      chatBox.appendChild(wrapper);
+      chatBox.scrollTop = chatBox.scrollHeight;
+
+      let accumulated = "";
 
       try {
-        const res = await fetch("/api/chat", {
+        const response = await fetch("/api/chat/stream", {
           method: "POST",
           headers: { "Content-Type": "application/json" },
           body: JSON.stringify({ query: text })
         });
-        const data = await res.json();
-        appendMessage("assistant", data.solution_markdown, true);
+
+        const reader = response.body.getReader();
+        const decoder = new TextDecoder();
+        let buffer = "";
+
+        while (true) {
+          const { done, value } = await reader.read();
+          if (done) break;
+
+          buffer += decoder.decode(value, { stream: true });
+          const lines = buffer.split("\n\n");
+          buffer = lines.pop(); // keep incomplete chunk
+
+          for (const line of lines) {
+            const trimmed = line.trim();
+            if (!trimmed.startsWith("data: ")) continue;
+            const dataStr = trimmed.substring(6).trim();
+
+            if (dataStr === "[DONE]") {
+              break;
+            }
+
+            try {
+              const parsed = JSON.parse(dataStr);
+              if (parsed.token) {
+                accumulated += parsed.token;
+                bubble.innerHTML = marked.parse(accumulated) + '<span class="inline-block w-1.5 h-3.5 bg-blue-400 ml-1 animate-pulse align-middle"></span>';
+                chatBox.scrollTop = chatBox.scrollHeight;
+              }
+            } catch (err) {}
+          }
+        }
+
+        // Final render without cursor
+        bubble.innerHTML = marked.parse(accumulated);
       } catch (err) {
-        appendMessage("assistant", "⚠️ Error connecting to Dub Support API. Please ensure the backend server is running.");
+        bubble.innerHTML = "<p class='text-red-400'>⚠️ Error streaming response from Dub Support API. Make sure the server is running.</p>";
       } finally {
         sendBtn.disabled = false;
         sendBtn.innerHTML = "<span>Resolve</span><span class='text-xs'>↵</span>";
+        chatBox.scrollTop = chatBox.scrollHeight;
       }
     }
 
