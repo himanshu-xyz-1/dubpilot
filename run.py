@@ -1,20 +1,19 @@
 #!/usr/bin/env python3
-"""
-Dub Support AI Launcher
-"""
+# Main entrypoint script to run the local server.
 
 import os
 import sys
 import uvicorn
 
+# Make sure Python can find our local modules
 sys.path.insert(0, os.path.abspath(os.path.dirname(__file__)))
 
 if __name__ == "__main__":
+    # Use the PORT env variable if set, otherwise default to 8080
     port = int(os.environ.get("PORT", 8080))
-    print("=" * 65)
-    print("🚀 DUBPILOT IS ONLINE (Autonomous Support Engine for Dub.co)")
-    print("=" * 65)
-    print(f"• Local Web UI: http://localhost:{port}")
-    print(f"• API Docs:     http://localhost:{port}/docs")
-    print("=" * 65 + "\n")
+    print("=" * 60)
+    print("🚀 DubPilot server is starting up...")
+    print(f"• Web UI:  http://localhost:{port}")
+    print(f"• Swagger: http://localhost:{port}/docs")
+    print("=" * 60 + "\n")
     uvicorn.run("api.server:app", host="0.0.0.0", port=port, reload=False)

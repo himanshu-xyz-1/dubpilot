@@ -1,9 +1,4 @@
-"""
-DubPilot API Server
-===================
-FastAPI backend powering the interactive DubPilot web interface,
-real-time SSE streaming, live DNS/SSL diagnostic probes, and webhook verification.
-"""
+# FastAPI backend server that handles API requests, live DNS/SSL checks, and token streaming.
 
 from __future__ import annotations
 import asyncio
@@ -15,18 +10,19 @@ from fastapi.middleware.cors import CORSMiddleware
 from fastapi.responses import HTMLResponse, JSONResponse, StreamingResponse
 from pydantic import BaseModel, Field
 
-# Add project root to sys.path
+# Make sure we can import from our agent folder
 sys.path.insert(0, os.path.abspath(os.path.join(os.path.dirname(__file__), "..")))
 
 from agent.engine import DubSupportEngine
 from agent.tools import check_domain_dns, check_domain_ssl, verify_webhook_hmac
 
 app = FastAPI(
-    title="DubPilot • AI Support & Diagnostic Platform for Dub.co",
-    description="Autonomous customer support and real-time DNS/SSL troubleshooting engine for Dub.co",
+    title="DubPilot API",
+    description="Support and DNS troubleshooting backend for Dub.co",
     version="1.0.0",
 )
 
+# Allow requests from any origin so frontend clients can connect
 app.add_middleware(
     CORSMiddleware,
     allow_origins=["*"],
@@ -35,21 +31,24 @@ app.add_middleware(
     allow_headers=["*"],
 )
 
+# Initialize the support engine
 engine = DubSupportEngine()
 
 
+# Request body models using Pydantic for validation
 class ChatRequest(BaseModel):
-    query: str = Field(..., description="Developer support query or domain to diagnose.")
+    query: str = Field(..., description="User question or domain name to check.")
 
 
 class WebhookVerifyRequest(BaseModel):
-    payload: str = Field(..., description="Raw webhook event payload body.")
-    signature: str = Field(..., description="Dub-Signature header value.")
-    secret: str = Field(..., description="Workspace webhook signing secret.")
+    payload: str = Field(..., description="Raw webhook event body.")
+    signature: str = Field(..., description="The signature header from Dub.")
+    secret: str = Field(..., description="Your webhook secret key.")
 
 
 @app.get("/health")
 def health_check():
+    """Simple health check endpoint."""
     return {
         "status": "healthy",
         "service": "dubpilot",
@@ -60,23 +59,23 @@ def health_check():
 
 @app.get("/api/dns")
 def test_dns(domain: str):
-    """Executes live socket-level DNS inspection on a domain."""
+    """Checks DNS records for a domain in real time."""
     if not domain.strip():
-        raise HTTPException(status_code=400, detail="Domain query parameter required.")
+        raise HTTPException(status_code=400, detail="Please provide a domain parameter.")
     return check_domain_dns(domain.strip())
 
 
 @app.get("/api/ssl")
 def test_ssl(domain: str):
-    """Inspects port 443 TLS handshake and certificate validity."""
+    """Tests the SSL certificate on port 443 of a domain."""
     if not domain.strip():
-        raise HTTPException(status_code=400, detail="Domain query parameter required.")
+        raise HTTPException(status_code=400, detail="Please provide a domain parameter.")
     return check_domain_ssl(domain.strip())
 
 
 @app.post("/api/verify-webhook")
 def verify_webhook(req: WebhookVerifyRequest):
-    """Validates HMAC SHA-256 signatures for Dub.co webhook payloads."""
+    """Verifies that a webhook was actually sent by Dub.co."""
     is_valid = verify_webhook_hmac(req.payload, req.signature, req.secret)
     return {
         "verified": is_valid,
@@ -87,18 +86,21 @@ def verify_webhook(req: WebhookVerifyRequest):
 
 @app.post("/api/chat")
 def handle_chat(req: ChatRequest):
-    """Processes user support query and returns resolution with live diagnostics."""
+    """Answers a question and returns the full response at once."""
     if not req.query.strip():
         raise HTTPException(status_code=400, detail="Query cannot be empty.")
     return engine.resolve_ticket(req.query)
 
 
 async def sse_chat_generator(query: str):
-    """Streams resolution tokens with smooth typing latency and live diagnostics."""
+    """
+    Streams the response word by word using Server-Sent Events (SSE).
+    This gives an instant, typewriter-style feel in the UI.
+    """
     result = engine.resolve_ticket(query)
     full_markdown = result["solution_markdown"]
 
-    # Stream chunks smoothly
+    # Send words one by one with a tiny delay
     words = full_markdown.split(" ")
     for i, word in enumerate(words):
         chunk = word + (" " if i < len(words) - 1 else "")
@@ -106,12 +108,13 @@ async def sse_chat_generator(query: str):
         yield f"data: {payload}\n\n"
         await asyncio.sleep(0.015)
 
+    # Signal to the browser that we are done
     yield "data: [DONE]\n\n"
 
 
 @app.post("/api/chat/stream")
 async def handle_chat_stream(req: ChatRequest):
-    """Streams resolution tokens in real-time via Server-Sent Events (SSE)."""
+    """Streams the response in real time via Server-Sent Events."""
     if not req.query.strip():
         raise HTTPException(status_code=400, detail="Query cannot be empty.")
     return StreamingResponse(
@@ -126,9 +129,9 @@ async def handle_chat_stream(req: ChatRequest):
 
 @app.get("/", response_class=HTMLResponse)
 def serve_ui():
-    """Serves sleek Dub.co-styled interactive web client."""
+    """Serves the main web interface."""
     web_file = os.path.join(os.path.dirname(__file__), "..", "web", "index.html")
     if os.path.exists(web_file):
         with open(web_file, "r", encoding="utf-8") as f:
             return f.read()
-    return "<h1>DubPilot Active</h1>"
+    return "<h1>DubPilot is running</h1>"
