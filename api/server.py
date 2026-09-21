@@ -159,9 +159,13 @@ async def handle_chat_stream(req: ChatRequest):
 
 
 @app.get("/", response_class=HTMLResponse)
+@app.get("/api", response_class=HTMLResponse)
+@app.get("/api/index.py", response_class=HTMLResponse)
 def serve_ui():
     """Serves the main web interface."""
     web_file = os.path.join(os.path.dirname(__file__), "..", "web", "index.html")
+    if not os.path.exists(web_file):
+        web_file = os.path.join(os.path.dirname(__file__), "..", "public", "index.html")
     if os.path.exists(web_file):
         with open(web_file, "r", encoding="utf-8") as f:
             return f.read()

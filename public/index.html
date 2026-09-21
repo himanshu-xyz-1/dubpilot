@@ -1,0 +1,408 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>DubPilot • AI Support & Live DNS Engine for Dub.co</title>
+  <script src="https://cdn.tailwindcss.com"></script>
+  <script src="https://cdn.jsdelivr.net/npm/marked/marked.min.js"></script>
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@400;500;600;700;800&family=JetBrains+Mono:wght@400;500&display=swap" rel="stylesheet">
+  <style>
+    body {
+      font-family: 'Plus Jakarta Sans', sans-serif;
+      background-color: #ffffff;
+      background-image: linear-gradient(to right, rgba(0, 0, 0, 0.04) 1px, transparent 1px),
+                        linear-gradient(to bottom, rgba(0, 0, 0, 0.04) 1px, transparent 1px);
+      background-size: 48px 48px;
+    }
+    code, pre {
+      font-family: 'JetBrains Mono', monospace;
+    }
+    .markdown-body pre {
+      background-color: #09090b;
+      color: #fafafa;
+      padding: 0.875rem 1rem;
+      border-radius: 0.625rem;
+      overflow-x: auto;
+      margin: 0.625rem 0;
+      font-size: 0.8125rem;
+      border: 1px solid #27272a;
+    }
+    .markdown-body pre code {
+      color: #38bdf8;
+      background: transparent;
+      padding: 0;
+    }
+    .markdown-body code {
+      background-color: #f4f4f5;
+      color: #09090b;
+      padding: 0.15rem 0.35rem;
+      border-radius: 0.375rem;
+      font-size: 0.8125rem;
+      border: 1px solid #e4e4e7;
+    }
+    .markdown-body ul {
+      list-style-type: disc;
+      margin-left: 1.25rem;
+      margin-bottom: 0.625rem;
+    }
+    .markdown-body p {
+      margin-bottom: 0.625rem;
+      line-height: 1.6;
+    }
+    .markdown-body h3 {
+      font-size: 1.05rem;
+      font-weight: 700;
+      margin-top: 1rem;
+      margin-bottom: 0.5rem;
+      color: #09090b;
+      letter-spacing: -0.01em;
+    }
+    .markdown-body strong {
+      font-weight: 700;
+      color: #09090b;
+    }
+    .markdown-body table {
+      width: 100%;
+      border-collapse: collapse;
+      margin: 0.75rem 0;
+      font-size: 0.8125rem;
+    }
+    .markdown-body th, .markdown-body td {
+      border: 1px solid #e4e4e7;
+      padding: 0.5rem 0.75rem;
+      text-align: left;
+    }
+    .markdown-body th {
+      background-color: #f4f4f5;
+      font-weight: 600;
+      color: #09090b;
+    }
+    .markdown-body tr:nth-child(even) td {
+      background-color: #fafafa;
+    }
+    .markdown-body a {
+      color: #2563eb;
+      text-decoration: underline;
+    }
+    .cursor-blink {
+      display: inline-block;
+      width: 0.375rem;
+      height: 0.9rem;
+      background-color: #000;
+      margin-left: 0.15rem;
+      vertical-align: middle;
+      animation: blink 0.9s infinite;
+    }
+    @keyframes blink {
+      0%, 100% { opacity: 1; }
+      50% { opacity: 0; }
+    }
+  </style>
+</head>
+<body class="min-h-screen text-zinc-900 flex flex-col items-center">
+
+  <!-- Navigation Bar (Dub.co Signature Style) -->
+  <header class="w-full border-b border-zinc-200/80 bg-white/90 backdrop-blur-md sticky top-0 z-50">
+    <div class="max-w-6xl mx-auto px-4 sm:px-6 h-16 flex items-center justify-between">
+      
+      <!-- Brand Logo -->
+      <div class="flex items-center space-x-6">
+        <a href="/" class="flex items-center space-x-2.5 group">
+          <div class="w-8 h-8 rounded-lg bg-black text-white flex items-center justify-center font-extrabold text-xs tracking-tight shadow-sm transition group-hover:scale-105">
+            DP
+          </div>
+          <span class="font-bold text-base tracking-tight text-black flex items-center gap-1.5">
+            DubPilot
+            <span class="text-[10px] uppercase font-bold tracking-wider px-2 py-0.5 rounded-full bg-zinc-100 text-zinc-700 border border-zinc-300/80">for Dub.co</span>
+          </span>
+        </a>
+      </div>
+
+      <!-- Center Links (Desktop) -->
+      <nav class="hidden md:flex items-center space-x-8 text-sm font-medium text-zinc-600">
+        <span class="text-zinc-900 font-semibold cursor-pointer">Live DNS Diagnostic</span>
+        <a href="https://dub.co/docs" target="_blank" class="hover:text-black transition">Documentation ↗</a>
+        <a href="https://dub.co/help" target="_blank" class="hover:text-black transition">Help Center ↗</a>
+      </nav>
+
+      <!-- Status Pill & State Manipulator Toggle -->
+      <div class="flex items-center space-x-2">
+        <button id="chaos-btn" onclick="toggleGroqSimulation()" title="Click to test automatic failover to local Ollama LLaMA" class="px-2.5 py-1 text-xs rounded-full border border-zinc-200 bg-white hover:bg-zinc-100 font-medium text-zinc-700 transition cursor-pointer flex items-center gap-1.5 shadow-xs">
+          <span class="w-1.5 h-1.5 rounded-full bg-zinc-400"></span>
+          <span id="chaos-label">Simulate Groq Outage</span>
+        </button>
+        <div id="status-pill" class="flex items-center space-x-2 bg-emerald-50 border border-emerald-200 px-3 py-1.5 rounded-full text-xs font-semibold text-emerald-800 shadow-xs">
+          <span class="w-2 h-2 rounded-full bg-emerald-500 animate-pulse"></span>
+          <span>Groq LPU (120B Model) Active • Anycast Ready</span>
+        </div>
+      </div>
+    </div>
+  </header>
+
+  <!-- Hero Section -->
+  <section class="max-w-4xl w-full text-center pt-10 pb-6 px-4">
+    <!-- Announcement Pill -->
+    <div class="inline-flex items-center gap-2 px-3.5 py-1 rounded-full border border-zinc-200 bg-white/80 backdrop-blur-xs text-xs font-medium text-zinc-700 shadow-xs mb-5">
+      <span class="font-semibold text-black">DubPilot AI</span>
+      <span class="text-zinc-300">•</span>
+      <span>Autonomous DNS & Support Copilot for Dub.co ↗</span>
+    </div>
+
+    <!-- Main Headline -->
+    <h1 class="text-4xl sm:text-5xl font-extrabold text-black tracking-tight leading-tight mb-3">
+      Turn link support tickets into instant fixes
+    </h1>
+    <p class="text-base sm:text-lg text-zinc-600 max-w-2xl mx-auto leading-relaxed mb-6 font-normal">
+      DubPilot is the autonomous developer support engine tailored for Dub.co. It runs live DNS socket telemetry, diagnoses Cloudflare 525 errors, and troubleshoots API bottlenecks in real time.
+    </p>
+
+    <!-- Preset Category Pills (Dub Feature Selector Style) -->
+    <div class="inline-flex flex-wrap items-center justify-center gap-2 p-1.5 bg-zinc-100/90 rounded-2xl border border-zinc-200 shadow-inner mb-6">
+      <button onclick="askPreset('How do I configure my apex domain mycompany.com on Dub?')" class="flex items-center gap-2 px-3.5 py-2 rounded-xl bg-white text-zinc-900 text-xs font-semibold shadow-xs hover:border-zinc-300 border border-zinc-200/80 transition">
+        <span class="w-2 h-2 rounded-full bg-blue-500"></span>
+        <span>Apex Domain (A Record)</span>
+      </button>
+      <button onclick="askPreset('My links are failing with Cloudflare Error 525 SSL Handshake Failed.')" class="flex items-center gap-2 px-3.5 py-2 rounded-xl bg-white text-zinc-900 text-xs font-semibold shadow-xs hover:border-zinc-300 border border-zinc-200/80 transition">
+        <span class="w-2 h-2 rounded-full bg-amber-500"></span>
+        <span>Cloudflare 525 SSL Fix</span>
+      </button>
+      <button onclick="askPreset('I am getting HTTP 429 Too Many Requests on the API. How do I handle it?')" class="flex items-center gap-2 px-3.5 py-2 rounded-xl bg-white text-zinc-900 text-xs font-semibold shadow-xs hover:border-zinc-300 border border-zinc-200/80 transition">
+        <span class="w-2 h-2 rounded-full bg-emerald-500"></span>
+        <span>429 Rate Limits & Backoff</span>
+      </button>
+      <button onclick="askPreset('How do I verify Dub webhook HMAC SHA-256 signatures in Python?')" class="flex items-center gap-2 px-3.5 py-2 rounded-xl bg-white text-zinc-900 text-xs font-semibold shadow-xs hover:border-zinc-300 border border-zinc-200/80 transition">
+        <span class="w-2 h-2 rounded-full bg-purple-500"></span>
+        <span>Webhook HMAC Security</span>
+      </button>
+    </div>
+  </section>
+
+  <!-- Floating Dashboard Card (Exact Dub.co Mockup Style) -->
+  <main class="w-full max-w-4xl px-4 pb-12 flex flex-col items-center">
+    <div class="w-full rounded-2xl border border-zinc-200/90 bg-white shadow-2xl shadow-zinc-200/60 overflow-hidden flex flex-col">
+      
+      <!-- Card Window Header -->
+      <div class="h-11 bg-zinc-50/80 border-b border-zinc-200/80 px-4 flex items-center justify-between">
+        <div class="flex items-center space-x-2">
+          <span class="w-3 h-3 rounded-full bg-zinc-300/80 inline-block"></span>
+          <span class="w-3 h-3 rounded-full bg-zinc-300/80 inline-block"></span>
+          <span class="w-3 h-3 rounded-full bg-zinc-300/80 inline-block"></span>
+          <span class="text-xs font-medium text-zinc-500 ml-2 font-mono">dub.co/support-copilot</span>
+        </div>
+        <div class="text-[11px] font-semibold text-zinc-500 tracking-wider uppercase">
+          Real-Time Resolution Session
+        </div>
+      </div>
+
+      <!-- Messages Stream Area -->
+      <div id="chat-box" class="p-6 md:p-8 min-h-[400px] max-h-[520px] overflow-y-auto flex flex-col space-y-5 bg-white">
+        
+        <!-- Welcome Message -->
+        <div class="flex items-start space-x-3.5">
+          <div class="w-8 h-8 rounded-lg bg-black text-white flex items-center justify-center font-bold text-xs shrink-0 mt-0.5 shadow-sm">
+            DP
+          </div>
+          <div class="bg-zinc-50 border border-zinc-200/90 rounded-2xl rounded-tl-xs p-4 text-sm text-zinc-800 max-w-[88%] shadow-xs leading-relaxed">
+            <p class="font-bold text-black mb-1.5 text-sm">Welcome to DubPilot for Dub.co.</p>
+            <p class="text-zinc-600">I can diagnose live DNS configurations for custom domains, troubleshoot Cloudflare 525 SSL handshakes, calculate API rate limit backoffs, and verify webhook signatures. Ask a question or type your domain below to run live telemetry.</p>
+          </div>
+        </div>
+
+      </div>
+
+      <!-- Input Bar (Clean White Card with Black Button) -->
+      <div class="p-4 bg-zinc-50/70 border-t border-zinc-200">
+        <form id="chat-form" onsubmit="handleSubmit(event)" class="relative flex items-center">
+          <input
+            type="text"
+            id="user-input"
+            placeholder="Ask a question or enter a domain (e.g. 'links.mybrand.com is showing SSL error')..."
+            class="w-full bg-white border border-zinc-300 focus:border-black focus:ring-2 focus:ring-black/5 text-sm text-zinc-900 placeholder-zinc-400 rounded-xl py-3.5 pl-4 pr-28 outline-none transition shadow-xs"
+            autocomplete="off"
+          />
+          <button
+            type="submit"
+            id="send-btn"
+            class="absolute right-2 px-5 py-2 bg-black hover:bg-zinc-800 text-white rounded-lg text-xs font-semibold transition flex items-center gap-1.5 shadow-sm cursor-pointer"
+          >
+            <span>Resolve</span>
+            <span class="text-xs font-mono">↵</span>
+          </button>
+        </form>
+        <div class="flex items-center justify-between mt-2.5 px-1 text-[11px] text-zinc-400 font-medium">
+          <span>DubPilot • Engineered by Himanshu Joshi for Dub.co</span>
+          <span>Targeting Anycast: <code>76.76.21.21</code> & <code>cname.dub.co</code></span>
+        </div>
+      </div>
+
+    </div>
+  </section>
+
+  <script>
+    const chatBox = document.getElementById("chat-box");
+    const userInput = document.getElementById("user-input");
+    const sendBtn = document.getElementById("send-btn");
+
+    // Generate or retrieve unique conversational session ID
+    let sessionId = localStorage.getItem("dubpilot_session_id");
+    if (!sessionId) {
+      sessionId = "sess_" + Math.random().toString(36).substring(2, 10) + Date.now().toString(36);
+      localStorage.setItem("dubpilot_session_id", sessionId);
+    }
+
+    // Configure marked to render single line breaks as <br>
+    marked.setOptions({
+      breaks: true,
+      gfm: true
+    });
+
+    function appendMessage(role, content, isMarkdown = false) {
+      const isUser = role === "user";
+      const wrapper = document.createElement("div");
+      wrapper.className = `flex items-start space-x-3.5 ${isUser ? 'justify-end' : ''}`;
+
+      const avatar = document.createElement("div");
+      avatar.className = `w-8 h-8 rounded-lg flex items-center justify-center font-bold text-xs shrink-0 mt-0.5 shadow-sm ${isUser ? 'bg-zinc-800 text-white order-2 ml-3' : 'bg-black text-white'}`;
+      avatar.innerText = isUser ? "YOU" : "DP";
+
+      const bubble = document.createElement("div");
+      bubble.className = isUser 
+        ? "bg-black text-white rounded-2xl rounded-tr-xs p-4 text-sm max-w-[85%] leading-relaxed shadow-sm font-medium"
+        : "bg-zinc-50 border border-zinc-200/90 rounded-2xl rounded-tl-xs p-5 text-sm text-zinc-800 max-w-[90%] leading-relaxed shadow-xs markdown-body";
+
+      if (isMarkdown && !isUser) {
+        bubble.innerHTML = marked.parse(content);
+      } else {
+        bubble.innerText = content;
+      }
+
+      if (isUser) {
+        wrapper.appendChild(bubble);
+        wrapper.appendChild(avatar);
+      } else {
+        wrapper.appendChild(avatar);
+        wrapper.appendChild(bubble);
+      }
+
+      chatBox.appendChild(wrapper);
+      chatBox.scrollTop = chatBox.scrollHeight;
+    }
+
+    async function handleSubmit(e) {
+      if (e) e.preventDefault();
+      const text = userInput.value.trim();
+      if (!text) return;
+
+      appendMessage("user", text);
+      userInput.value = "";
+      sendBtn.disabled = true;
+      sendBtn.innerText = "Diagnosing...";
+
+      // Create Assistant bubble placeholder for live stream
+      const wrapper = document.createElement("div");
+      wrapper.className = "flex items-start space-x-3.5";
+      const avatar = document.createElement("div");
+      avatar.className = "w-8 h-8 rounded-lg flex items-center justify-center font-bold text-xs shrink-0 mt-0.5 bg-black shadow-sm";
+      avatar.innerText = "DP";
+
+      const bubble = document.createElement("div");
+      bubble.className = "bg-zinc-50 border border-zinc-200/90 rounded-2xl rounded-tl-xs p-5 text-sm text-zinc-800 max-w-[90%] leading-relaxed shadow-xs markdown-body";
+      bubble.innerHTML = '<span class="cursor-blink"></span>';
+
+      wrapper.appendChild(avatar);
+      wrapper.appendChild(bubble);
+      chatBox.appendChild(wrapper);
+      chatBox.scrollTop = chatBox.scrollHeight;
+
+      let accumulated = "";
+
+      try {
+        const response = await fetch("/api/chat/stream", {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({ query: text, session_id: sessionId })
+        });
+
+        const reader = response.body.getReader();
+        const decoder = new TextDecoder();
+        let buffer = "";
+
+        while (true) {
+          const { done, value } = await reader.read();
+          if (done) break;
+
+          buffer += decoder.decode(value, { stream: true });
+          const lines = buffer.split("\n\n");
+          buffer = lines.pop();
+
+          for (const line of lines) {
+            const trimmed = line.trim();
+            if (!trimmed.startsWith("data: ")) continue;
+            const dataStr = trimmed.substring(6).trim();
+
+            if (dataStr === "[DONE]") {
+              break;
+            }
+
+            try {
+              const parsed = JSON.parse(dataStr);
+              if (parsed.token) {
+                accumulated += parsed.token;
+                bubble.innerHTML = marked.parse(accumulated) + '<span class="cursor-blink"></span>';
+                chatBox.scrollTop = chatBox.scrollHeight;
+              }
+            } catch (err) {}
+          }
+        }
+
+        bubble.innerHTML = marked.parse(accumulated);
+      } catch (err) {
+        bubble.innerHTML = "<p class='text-red-500 font-medium'>⚠️ Error streaming response from Dub Support API. Make sure the server is running.</p>";
+      } finally {
+        sendBtn.disabled = false;
+        sendBtn.innerHTML = "<span>Resolve</span><span class='text-xs font-mono'>↵</span>";
+        chatBox.scrollTop = chatBox.scrollHeight;
+      }
+    }
+
+    function askPreset(prompt) {
+      userInput.value = prompt;
+      handleSubmit();
+    }
+
+    let isSimulatingGroqOutage = false;
+
+    async function toggleGroqSimulation() {
+      isSimulatingGroqOutage = !isSimulatingGroqOutage;
+      const chaosBtn = document.getElementById("chaos-btn");
+      const chaosLabel = document.getElementById("chaos-label");
+      const statusPill = document.getElementById("status-pill");
+
+      try {
+        const res = await fetch("/api/dev/simulate", {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({ simulate_groq_failure: isSimulatingGroqOutage })
+        });
+        const data = await res.json();
+        if (isSimulatingGroqOutage) {
+          chaosLabel.innerText = "Restore Groq Cloud";
+          chaosBtn.className = "px-2.5 py-1 text-xs rounded-full border border-amber-300 bg-amber-50 hover:bg-amber-100 font-semibold text-amber-800 transition cursor-pointer flex items-center gap-1.5 shadow-xs";
+          statusPill.innerHTML = '<span class="w-2 h-2 rounded-full bg-amber-500 animate-pulse"></span><span>⚠️ Groq Offline (Simulated) • Fallback: Ollama Active</span>';
+          statusPill.className = "flex items-center space-x-2 bg-amber-50 border border-amber-200 px-3 py-1.5 rounded-full text-xs font-semibold text-amber-800 shadow-xs";
+        } else {
+          chaosLabel.innerText = "Simulate Groq Outage";
+          chaosBtn.className = "px-2.5 py-1 text-xs rounded-full border border-zinc-200 bg-white hover:bg-zinc-100 font-medium text-zinc-700 transition cursor-pointer flex items-center gap-1.5 shadow-xs";
+          statusPill.innerHTML = '<span class="w-2 h-2 rounded-full bg-emerald-500 animate-pulse"></span><span>Groq LPU (120B Model) Active • Anycast Ready</span>';
+          statusPill.className = "flex items-center space-x-2 bg-emerald-50 border border-emerald-200 px-3 py-1.5 rounded-full text-xs font-semibold text-emerald-800 shadow-xs";
+        }
+      } catch (err) {
+        console.error("Failed to toggle simulation state:", err);
+      }
+    }
+  </script>
+</body>
+</html>
