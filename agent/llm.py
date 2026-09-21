@@ -1,5 +1,5 @@
-# Interface to local Ollama instance running LLaMA models.
-# Handles connection health checks, multi-turn chat memory, and async token streaming.
+# Unified LLM provider supporting both Groq Cloud (ultra-fast 500+ tokens/sec)
+# and local Ollama LLaMA models with multi-turn session memory and async streaming.
 
 from __future__ import annotations
 import asyncio
@@ -11,6 +11,25 @@ from typing import AsyncIterator, Dict, List, Optional
 import httpx
 
 logger = logging.getLogger("dubpilot.llm")
+
+
+def load_env_file():
+    """Lightweight .env loader without external dependencies."""
+    base_dir = os.path.abspath(os.path.join(os.path.dirname(__file__), ".."))
+    env_path = os.path.join(base_dir, ".env")
+    if os.path.exists(env_path):
+        try:
+            with open(env_path, "r", encoding="utf-8") as f:
+                for line in f:
+                    line = line.strip()
+                    if line and not line.startswith("#") and "=" in line:
+                        k, v = line.split("=", 1)
+                        os.environ.setdefault(k.strip(), v.strip().strip("'\""))
+        except Exception:
+            pass
+
+
+load_env_file()
 
 
 class SessionMemory:
@@ -39,7 +58,7 @@ class SessionMemory:
         now = time.time()
         if session_id not in self.sessions:
             self.sessions[session_id] = {"last_active": now, "messages": []}
-        
+
         entry = self.sessions[session_id]
         entry["last_active"] = now
         entry["messages"].append({"role": "user", "content": user_text})
@@ -50,10 +69,89 @@ class SessionMemory:
             entry["messages"] = entry["messages"][-self.max_turns * 2:]
 
 
+class GroqLLM:
+    """
+    Groq Cloud client running high-performance LPU models at 500+ tokens/sec.
+    """
+
+    def __init__(self, api_key: str, model: Optional[str] = None):
+        self.api_key = api_key.strip()
+        self.model = model or os.getenv("GROQ_MODEL", "openai/gpt-oss-120b")
+        self.base_url = "https://api.groq.com/openai/v1"
+
+    def is_available(self) -> bool:
+        return bool(self.api_key and self.api_key.startswith("gsk_"))
+
+    def generate(self, messages: List[Dict[str, str]], system_prompt: str = "") -> Optional[str]:
+        full_messages = []
+        if system_prompt:
+            full_messages.append({"role": "system", "content": system_prompt})
+        full_messages.extend(messages)
+
+        headers = {
+            "Authorization": f"Bearer {self.api_key}",
+            "Content-Type": "application/json",
+        }
+        payload = {
+            "model": self.model,
+            "messages": full_messages,
+            "temperature": 0.2,
+        }
+
+        try:
+            with httpx.Client(timeout=15.0) as client:
+                res = client.post(f"{self.base_url}/chat/completions", json=payload, headers=headers)
+                if res.status_code == 200:
+                    data = res.json()
+                    return data["choices"][0]["message"]["content"].strip()
+                logger.warning(f"Groq API error {res.status_code}: {res.text}")
+        except Exception as e:
+            logger.warning(f"Groq generation exception: {e}")
+        return None
+
+    async def stream_chat(
+        self, messages: List[Dict[str, str]], system_prompt: str = ""
+    ) -> AsyncIterator[str]:
+        full_messages = []
+        if system_prompt:
+            full_messages.append({"role": "system", "content": system_prompt})
+        full_messages.extend(messages)
+
+        headers = {
+            "Authorization": f"Bearer {self.api_key}",
+            "Content-Type": "application/json",
+        }
+        payload = {
+            "model": self.model,
+            "messages": full_messages,
+            "stream": True,
+            "temperature": 0.2,
+        }
+
+        async with httpx.AsyncClient(timeout=20.0) as client:
+            async with client.stream(
+                "POST", f"{self.base_url}/chat/completions", json=payload, headers=headers
+            ) as response:
+                if response.status_code != 200:
+                    logger.error(f"Groq stream error: {response.status_code}")
+                    return
+                async for line in response.aiter_lines():
+                    if line.startswith("data: "):
+                        data_str = line[6:].strip()
+                        if data_str == "[DONE]":
+                            break
+                        try:
+                            chunk = json.loads(data_str)
+                            delta = chunk["choices"][0].get("delta", {}).get("content", "")
+                            if delta:
+                                yield delta
+                        except json.JSONDecodeError:
+                            continue
+
+
 class OllamaLLM:
     """
-    Client for interacting with local Ollama LLaMA models.
-    Supports streaming and graceful fallback if Ollama is offline.
+    Local Ollama client running local models (e.g. LLaMA 3.2 3B).
     """
 
     def __init__(
@@ -65,26 +163,19 @@ class OllamaLLM:
         self.base_url = (base_url or os.getenv("OLLAMA_BASE_URL", "http://localhost:11434")).rstrip("/")
         self.model = model or os.getenv("OLLAMA_MODEL", "llama3.2:3b")
         self.timeout = timeout
-        self.memory = SessionMemory()
 
     def is_available(self) -> bool:
-        """Quick check to see if Ollama server and model are ready."""
         try:
-            with httpx.Client(timeout=2.0) as client:
+            with httpx.Client(timeout=1.5) as client:
                 res = client.get(f"{self.base_url}/api/tags")
                 if res.status_code == 200:
                     models = [m.get("name", "") for m in res.json().get("models", [])]
-                    # Check if our target model or its base name is pulled
                     return any(self.model in m or m.startswith(self.model.split(":")[0]) for m in models)
         except Exception:
             return False
         return False
 
     def generate(self, messages: List[Dict[str, str]], system_prompt: str = "") -> Optional[str]:
-        """
-        Synchronous completion call using LLaMA.
-        Returns the text response, or None if Ollama fails.
-        """
         full_messages = []
         if system_prompt:
             full_messages.append({"role": "system", "content": system_prompt})
@@ -94,30 +185,21 @@ class OllamaLLM:
             "model": self.model,
             "messages": full_messages,
             "stream": False,
-            "options": {
-                "temperature": 0.2,
-                "top_p": 0.9,
-            },
+            "options": {"temperature": 0.2},
         }
 
         try:
             with httpx.Client(timeout=self.timeout) as client:
                 res = client.post(f"{self.base_url}/api/chat", json=payload)
                 if res.status_code == 200:
-                    data = res.json()
-                    return data.get("message", {}).get("content", "").strip()
+                    return res.json().get("message", {}).get("content", "").strip()
         except Exception as e:
             logger.warning(f"Ollama generation error: {e}")
-            return None
         return None
 
     async def stream_chat(
         self, messages: List[Dict[str, str]], system_prompt: str = ""
     ) -> AsyncIterator[str]:
-        """
-        Asynchronously streams tokens from LLaMA as they are generated.
-        Yields raw string chunks.
-        """
         full_messages = []
         if system_prompt:
             full_messages.append({"role": "system", "content": system_prompt})
@@ -127,24 +209,82 @@ class OllamaLLM:
             "model": self.model,
             "messages": full_messages,
             "stream": True,
-            "options": {
-                "temperature": 0.2,
-                "top_p": 0.9,
-            },
+            "options": {"temperature": 0.2},
         }
 
         async with httpx.AsyncClient(timeout=self.timeout) as client:
             async with client.stream("POST", f"{self.base_url}/api/chat", json=payload) as response:
                 if response.status_code != 200:
-                    logger.error(f"Ollama stream failed with status {response.status_code}")
                     return
                 async for line in response.aiter_lines():
-                    if not line.strip():
-                        continue
-                    try:
-                        chunk = json.loads(line)
-                        content = chunk.get("message", {}).get("content", "")
-                        if content:
-                            yield content
-                    except json.JSONDecodeError:
-                        continue
+                    if line.strip():
+                        try:
+                            chunk = json.loads(line)
+                            content = chunk.get("message", {}).get("content", "")
+                            if content:
+                                yield content
+                        except json.JSONDecodeError:
+                            continue
+
+
+class UnifiedLLM:
+    """
+    Intelligent LLM router:
+    1. Uses Groq Cloud (500+ tokens/sec, 120B model) when GROQ_API_KEY is present.
+    2. Falls back to local Ollama (LLaMA 3.2) when offline or key is missing.
+    3. Manages conversational memory across turns.
+    """
+
+    def __init__(self):
+        groq_key = os.getenv("GROQ_API_KEY", "")
+        self.groq = GroqLLM(api_key=groq_key) if groq_key else None
+        self.ollama = OllamaLLM()
+        self.memory = SessionMemory()
+
+    def get_active_provider(self):
+        if self.groq and self.groq.is_available():
+            return "groq"
+        if self.ollama and self.ollama.is_available():
+            return "ollama"
+        return "none"
+
+    def get_model_name(self) -> str:
+        provider = self.get_active_provider()
+        if provider == "groq":
+            return f"groq ({self.groq.model})"
+        if provider == "ollama":
+            return f"ollama ({self.ollama.model})"
+        return "deterministic_kb"
+
+    def is_available(self) -> bool:
+        return self.get_active_provider() != "none"
+
+    def generate(self, messages: List[Dict[str, str]], system_prompt: str = "") -> Optional[str]:
+        # Try Groq first
+        if self.groq and self.groq.is_available():
+            ans = self.groq.generate(messages, system_prompt=system_prompt)
+            if ans:
+                return ans
+
+        # Fallback to local Ollama
+        if self.ollama and self.ollama.is_available():
+            return self.ollama.generate(messages, system_prompt=system_prompt)
+
+        return None
+
+    async def stream_chat(
+        self, messages: List[Dict[str, str]], system_prompt: str = ""
+    ) -> AsyncIterator[str]:
+        # Stream from Groq first
+        if self.groq and self.groq.is_available():
+            success = False
+            async for token in self.groq.stream_chat(messages, system_prompt=system_prompt):
+                success = True
+                yield token
+            if success:
+                return
+
+        # Fallback to local Ollama
+        if self.ollama and self.ollama.is_available():
+            async for token in self.ollama.stream_chat(messages, system_prompt=system_prompt):
+                yield token

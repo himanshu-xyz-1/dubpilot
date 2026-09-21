@@ -7,13 +7,13 @@ import re
 from typing import Dict, List, Any, Optional
 
 from agent.tools import check_domain_dns, check_domain_ssl
-from agent.llm import OllamaLLM
+from agent.llm import UnifiedLLM
 
 
 class DubSupportEngine:
     """
     Handles user support queries by combining live DNS/SSL network checks,
-    curated Dub.co troubleshooting playbooks, and local LLaMA 3.2 reasoning via Ollama.
+    curated Dub.co troubleshooting playbooks, Groq Cloud, and local Ollama LLaMA models.
     """
 
     def __init__(self, kb_path: Optional[str] = None):
@@ -25,7 +25,7 @@ class DubSupportEngine:
         self.kb_path = kb_path
         self.articles = []
         self._load_knowledge_base()
-        self.llm = OllamaLLM()
+        self.llm = UnifiedLLM()
 
     def _load_knowledge_base(self):
         # Load all help articles into memory so lookups are fast
@@ -251,7 +251,7 @@ class DubSupportEngine:
                     "dns_diagnostic": dns_diag,
                     "solution_markdown": final_text,
                     "articles_referenced": [a["id"] for a in kb_matches],
-                    "engine_used": "llama3.2:3b (ollama)",
+                    "engine_used": self.llm.get_model_name(),
                 }
 
         # Deterministic Fallback if Ollama is offline or generation failed

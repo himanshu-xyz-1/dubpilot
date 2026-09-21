@@ -60,7 +60,7 @@ def health_check():
         "service": "dubpilot",
         "version": "1.0.0",
         "knowledge_articles_loaded": len(engine.articles),
-        "llm_engine": engine.llm.model,
+        "llm_engine": engine.llm.get_model_name(),
         "llm_online": engine.llm.is_available(),
     }
 
