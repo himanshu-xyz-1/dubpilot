@@ -1,5 +1,5 @@
 <!DOCTYPE html>
-<html lang="en" class="dark">
+<html lang="en">
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
@@ -8,98 +8,204 @@
   <script src="https://cdn.jsdelivr.net/npm/marked/marked.min.js"></script>
   <link rel="preconnect" href="https://fonts.googleapis.com">
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
+  <link href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@400;500;600;700;800&family=JetBrains+Mono:wght@400;500&display=swap" rel="stylesheet">
   <style>
-    body { font-family: 'Inter', sans-serif; }
-    .markdown-body pre { background-color: #171717; padding: 1rem; border-radius: 0.5rem; overflow-x: auto; margin: 0.5rem 0; font-size: 0.875rem; border: 1px solid #2e2e2e; }
-    .markdown-body code { font-family: monospace; color: #38bdf8; }
-    .markdown-body ul { list-style-type: disc; margin-left: 1.5rem; margin-bottom: 0.5rem; }
-    .markdown-body p { margin-bottom: 0.75rem; }
-    .markdown-body h3 { font-size: 1.15rem; font-weight: 600; margin-top: 0.75rem; margin-bottom: 0.5rem; color: #f3f4f6; }
+    body {
+      font-family: 'Plus Jakarta Sans', sans-serif;
+      background-color: #ffffff;
+      background-image: linear-gradient(to right, rgba(0, 0, 0, 0.04) 1px, transparent 1px),
+                        linear-gradient(to bottom, rgba(0, 0, 0, 0.04) 1px, transparent 1px);
+      background-size: 48px 48px;
+    }
+    code, pre {
+      font-family: 'JetBrains Mono', monospace;
+    }
+    .markdown-body pre {
+      background-color: #09090b;
+      color: #fafafa;
+      padding: 0.875rem 1rem;
+      border-radius: 0.625rem;
+      overflow-x: auto;
+      margin: 0.625rem 0;
+      font-size: 0.8125rem;
+      border: 1px solid #27272a;
+    }
+    .markdown-body pre code {
+      color: #38bdf8;
+      background: transparent;
+      padding: 0;
+    }
+    .markdown-body code {
+      background-color: #f4f4f5;
+      color: #09090b;
+      padding: 0.15rem 0.35rem;
+      border-radius: 0.375rem;
+      font-size: 0.8125rem;
+      border: 1px solid #e4e4e7;
+    }
+    .markdown-body ul {
+      list-style-type: disc;
+      margin-left: 1.25rem;
+      margin-bottom: 0.625rem;
+    }
+    .markdown-body p {
+      margin-bottom: 0.625rem;
+      line-height: 1.6;
+    }
+    .markdown-body h3 {
+      font-size: 1.05rem;
+      font-weight: 700;
+      margin-top: 0.875rem;
+      margin-bottom: 0.4rem;
+      color: #09090b;
+    }
+    .cursor-blink {
+      display: inline-block;
+      width: 0.375rem;
+      height: 0.9rem;
+      background-color: #000;
+      margin-left: 0.15rem;
+      vertical-align: middle;
+      animation: blink 0.9s infinite;
+    }
+    @keyframes blink {
+      0%, 100% { opacity: 1; }
+      50% { opacity: 0; }
+    }
   </style>
 </head>
-<body class="bg-[#09090b] text-zinc-100 min-h-screen flex flex-col items-center p-4 md:p-6">
+<body class="min-h-screen text-zinc-900 flex flex-col items-center">
 
-  <!-- Header -->
-  <header class="w-full max-w-4xl flex items-center justify-between py-4 border-b border-zinc-800">
-    <div class="flex items-center space-x-3">
-      <div class="w-9 h-9 bg-gradient-to-tr from-blue-600 to-indigo-500 rounded-lg flex items-center justify-center font-bold text-lg text-white shadow-lg">
-        D
+  <!-- Navigation Bar (Dub.co Signature Style) -->
+  <header class="w-full border-b border-zinc-200/80 bg-white/90 backdrop-blur-md sticky top-0 z-50">
+    <div class="max-w-6xl mx-auto px-4 sm:px-6 h-16 flex items-center justify-between">
+      
+      <!-- Brand Logo -->
+      <div class="flex items-center space-x-6">
+        <a href="/" class="flex items-center space-x-2.5 group">
+          <div class="w-8 h-8 rounded-lg border-2 border-black flex items-center justify-center font-extrabold text-sm tracking-tighter text-black transition group-hover:bg-black group-hover:text-white">
+            dub
+          </div>
+          <span class="font-bold text-base tracking-tight text-black flex items-center gap-1.5">
+            Support Co-Pilot
+            <span class="text-[10px] uppercase font-bold tracking-wider px-2 py-0.5 rounded-full bg-zinc-100 text-zinc-700 border border-zinc-300/80">AI Agent</span>
+          </span>
+        </a>
       </div>
-      <div>
-        <h1 class="font-bold text-lg text-white tracking-tight flex items-center gap-2">
-          Dub.co Support Co-Pilot
-          <span class="text-xs font-medium px-2 py-0.5 rounded-full bg-blue-500/10 text-blue-400 border border-blue-500/20">AI Autonomous Resolution</span>
-        </h1>
-        <p class="text-xs text-zinc-400">DNS Diagnostics • SSL Protocol Triage • Rate Limit & Webhook Resolvers</p>
+
+      <!-- Center Links (Desktop) -->
+      <nav class="hidden md:flex items-center space-x-8 text-sm font-medium text-zinc-600">
+        <span class="text-zinc-900 font-semibold cursor-pointer">Live DNS Diagnostic</span>
+        <a href="https://dub.co/docs" target="_blank" class="hover:text-black transition">Documentation ↗</a>
+        <a href="https://dub.co/help" target="_blank" class="hover:text-black transition">Help Center ↗</a>
+      </nav>
+
+      <!-- Status Pill -->
+      <div class="flex items-center space-x-2 bg-emerald-50 border border-emerald-200 px-3 py-1.5 rounded-full text-xs font-semibold text-emerald-800 shadow-xs">
+        <span class="w-2 h-2 rounded-full bg-emerald-500 animate-pulse"></span>
+        <span>Anycast 76.76.21.21 Ready</span>
       </div>
-    </div>
-    <div class="flex items-center space-x-2">
-      <span class="w-2.5 h-2.5 rounded-full bg-emerald-500 animate-pulse"></span>
-      <span class="text-xs text-zinc-400">Live DNS Engine Ready</span>
     </div>
   </header>
 
-  <!-- Suggested Queries -->
-  <section class="w-full max-w-4xl my-4">
-    <p class="text-xs font-semibold text-zinc-500 uppercase tracking-wider mb-2">Test Common Developer Support Scenarios:</p>
-    <div class="grid grid-cols-1 md:grid-cols-2 gap-2">
-      <button onclick="askPreset('How do I configure my apex domain mycompany.com on Dub?')" class="text-left text-xs bg-zinc-900/70 hover:bg-zinc-800 border border-zinc-800 hover:border-zinc-700 p-2.5 rounded-lg text-zinc-300 transition flex items-center justify-between group">
-        <span>🌐 Configure Apex Domain (A Record)</span>
-        <span class="text-zinc-600 group-hover:text-zinc-400 font-mono">→</span>
+  <!-- Hero Section -->
+  <section class="max-w-4xl w-full text-center pt-10 pb-6 px-4">
+    <!-- Announcement Pill -->
+    <div class="inline-flex items-center gap-2 px-3 py-1 rounded-full border border-zinc-200 bg-white/80 backdrop-blur-xs text-xs font-medium text-zinc-700 shadow-xs mb-5">
+      <span class="font-semibold text-black">Autonomous L1/L2 Resolution</span>
+      <span class="text-zinc-300">•</span>
+      <span>Live DNS & Socket Telemetry ↗</span>
+    </div>
+
+    <!-- Main Headline -->
+    <h1 class="text-4xl sm:text-5xl font-extrabold text-black tracking-tight leading-tight mb-3">
+      Turn support tickets into instant fixes
+    </h1>
+    <p class="text-base sm:text-lg text-zinc-600 max-w-2xl mx-auto leading-relaxed mb-6 font-normal">
+      Dub is the modern link attribution platform. This AI co-pilot automatically inspects custom domain DNS, diagnoses Cloudflare 525 errors, and solves developer API bottlenecks.
+    </p>
+
+    <!-- Preset Category Pills (Dub Feature Selector Style) -->
+    <div class="inline-flex flex-wrap items-center justify-center gap-2 p-1.5 bg-zinc-100/90 rounded-2xl border border-zinc-200 shadow-inner mb-6">
+      <button onclick="askPreset('How do I configure my apex domain mycompany.com on Dub?')" class="flex items-center gap-2 px-3.5 py-2 rounded-xl bg-white text-zinc-900 text-xs font-semibold shadow-xs hover:border-zinc-300 border border-zinc-200/80 transition">
+        <span class="w-2 h-2 rounded-full bg-blue-500"></span>
+        <span>Apex Domain (A Record)</span>
       </button>
-      <button onclick="askPreset('My links are failing with Cloudflare Error 525 SSL Handshake Failed.')" class="text-left text-xs bg-zinc-900/70 hover:bg-zinc-800 border border-zinc-800 hover:border-zinc-700 p-2.5 rounded-lg text-zinc-300 transition flex items-center justify-between group">
-        <span>⚡ Fix Cloudflare 525 & SSL Error</span>
-        <span class="text-zinc-600 group-hover:text-zinc-400 font-mono">→</span>
+      <button onclick="askPreset('My links are failing with Cloudflare Error 525 SSL Handshake Failed.')" class="flex items-center gap-2 px-3.5 py-2 rounded-xl bg-white text-zinc-900 text-xs font-semibold shadow-xs hover:border-zinc-300 border border-zinc-200/80 transition">
+        <span class="w-2 h-2 rounded-full bg-amber-500"></span>
+        <span>Cloudflare 525 SSL Fix</span>
       </button>
-      <button onclick="askPreset('I am getting HTTP 429 Too Many Requests on the API. How do I handle it?')" class="text-left text-xs bg-zinc-900/70 hover:bg-zinc-800 border border-zinc-800 hover:border-zinc-700 p-2.5 rounded-lg text-zinc-300 transition flex items-center justify-between group">
-        <span>⏱️ 429 Rate Limits & Exponential Backoff</span>
-        <span class="text-zinc-600 group-hover:text-zinc-400 font-mono">→</span>
+      <button onclick="askPreset('I am getting HTTP 429 Too Many Requests on the API. How do I handle it?')" class="flex items-center gap-2 px-3.5 py-2 rounded-xl bg-white text-zinc-900 text-xs font-semibold shadow-xs hover:border-zinc-300 border border-zinc-200/80 transition">
+        <span class="w-2 h-2 rounded-full bg-emerald-500"></span>
+        <span>429 Rate Limits & Backoff</span>
       </button>
-      <button onclick="askPreset('How do I verify Dub webhook HMAC SHA-256 signatures in Python?')" class="text-left text-xs bg-zinc-900/70 hover:bg-zinc-800 border border-zinc-800 hover:border-zinc-700 p-2.5 rounded-lg text-zinc-300 transition flex items-center justify-between group">
-        <span>🔒 Webhook HMAC SHA-256 Verification</span>
-        <span class="text-zinc-600 group-hover:text-zinc-400 font-mono">→</span>
+      <button onclick="askPreset('How do I verify Dub webhook HMAC SHA-256 signatures in Python?')" class="flex items-center gap-2 px-3.5 py-2 rounded-xl bg-white text-zinc-900 text-xs font-semibold shadow-xs hover:border-zinc-300 border border-zinc-200/80 transition">
+        <span class="w-2 h-2 rounded-full bg-purple-500"></span>
+        <span>Webhook HMAC Security</span>
       </button>
     </div>
   </section>
 
-  <!-- Chat Messages Container -->
-  <main id="chat-box" class="w-full max-w-4xl flex-1 bg-zinc-900/40 border border-zinc-800 rounded-xl p-4 md:p-6 overflow-y-auto min-h-[420px] max-h-[550px] flex flex-col space-y-4">
-    <!-- Initial Greeting -->
-    <div class="flex items-start space-x-3">
-      <div class="w-8 h-8 rounded-full bg-blue-600 flex items-center justify-center text-xs font-bold text-white shrink-0 mt-1">
-        AI
+  <!-- Floating Dashboard Card (Exact Dub.co Mockup Style) -->
+  <main class="w-full max-w-4xl px-4 pb-12 flex flex-col items-center">
+    <div class="w-full rounded-2xl border border-zinc-200/90 bg-white shadow-2xl shadow-zinc-200/60 overflow-hidden flex flex-col">
+      
+      <!-- Card Window Header -->
+      <div class="h-11 bg-zinc-50/80 border-b border-zinc-200/80 px-4 flex items-center justify-between">
+        <div class="flex items-center space-x-2">
+          <span class="w-3 h-3 rounded-full bg-zinc-300/80 inline-block"></span>
+          <span class="w-3 h-3 rounded-full bg-zinc-300/80 inline-block"></span>
+          <span class="w-3 h-3 rounded-full bg-zinc-300/80 inline-block"></span>
+          <span class="text-xs font-medium text-zinc-500 ml-2 font-mono">dub.co/support-copilot</span>
+        </div>
+        <div class="text-[11px] font-semibold text-zinc-500 tracking-wider uppercase">
+          Real-Time Resolution Session
+        </div>
       </div>
-      <div class="bg-zinc-800/80 border border-zinc-700/60 rounded-2xl rounded-tl-sm p-4 text-sm text-zinc-200 max-w-[85%] leading-relaxed shadow-sm">
-        <p class="font-medium text-white mb-1">Welcome to Dub.co AI Customer Support!</p>
-        <p class="text-zinc-300">I can diagnose live DNS setups for custom domains, resolve SSL certificate issues, guide you through API rate limits, or verify webhook code snippets. What can I help you troubleshoot?</p>
-      </div>
-    </div>
-  </main>
 
-  <!-- Input Form -->
-  <footer class="w-full max-w-4xl mt-4">
-    <form id="chat-form" onsubmit="handleSubmit(event)" class="relative flex items-center">
-      <input
-        type="text"
-        id="user-input"
-        placeholder="Describe an issue or enter a domain (e.g., 'links.mybrand.com is showing SSL error')..."
-        class="w-full bg-zinc-900 border border-zinc-800 focus:border-blue-500 focus:ring-1 focus:ring-blue-500 text-sm text-zinc-100 placeholder-zinc-500 rounded-xl py-3.5 pl-4 pr-24 outline-none transition shadow-inner"
-        autocomplete="off"
-      />
-      <button
-        type="submit"
-        id="send-btn"
-        class="absolute right-2 px-4 py-2 bg-blue-600 hover:bg-blue-500 text-white rounded-lg text-xs font-semibold transition flex items-center gap-1 shadow"
-      >
-        <span>Resolve</span>
-        <span class="text-xs">↵</span>
-      </button>
-    </form>
-    <p class="text-center text-[11px] text-zinc-500 mt-2">
-      Engineered for Dub.co • Integrates Real-time DNS Resolution + Knowledge Base
-    </p>
-  </footer>
+      <!-- Messages Stream Area -->
+      <div id="chat-box" class="p-6 md:p-8 min-h-[400px] max-h-[520px] overflow-y-auto flex flex-col space-y-5 bg-white">
+        
+        <!-- Welcome Message -->
+        <div class="flex items-start space-x-3.5">
+          <div class="w-8 h-8 rounded-lg bg-black text-white flex items-center justify-center font-bold text-xs shrink-0 mt-0.5 shadow-sm">
+            dub
+          </div>
+          <div class="bg-zinc-50 border border-zinc-200/90 rounded-2xl rounded-tl-xs p-4 text-sm text-zinc-800 max-w-[88%] shadow-xs leading-relaxed">
+            <p class="font-bold text-black mb-1.5 text-sm">Welcome to the Dub.co AI Support Co-Pilot.</p>
+            <p class="text-zinc-600">I can diagnose live DNS configurations for custom domains, troubleshoot Cloudflare 525 SSL handshakes, calculate API rate limit backoffs, and verify webhook signatures. Ask a question or type your domain below to run live telemetry.</p>
+          </div>
+        </div>
+
+      </div>
+
+      <!-- Input Bar (Clean White Card with Black Button) -->
+      <div class="p-4 bg-zinc-50/70 border-t border-zinc-200">
+        <form id="chat-form" onsubmit="handleSubmit(event)" class="relative flex items-center">
+          <input
+            type="text"
+            id="user-input"
+            placeholder="Ask a question or enter a domain (e.g. 'links.mybrand.com is showing SSL error')..."
+            class="w-full bg-white border border-zinc-300 focus:border-black focus:ring-2 focus:ring-black/5 text-sm text-zinc-900 placeholder-zinc-400 rounded-xl py-3.5 pl-4 pr-28 outline-none transition shadow-xs"
+            autocomplete="off"
+          />
+          <button
+            type="submit"
+            id="send-btn"
+            class="absolute right-2 px-5 py-2 bg-black hover:bg-zinc-800 text-white rounded-lg text-xs font-semibold transition flex items-center gap-1.5 shadow-sm cursor-pointer"
+          >
+            <span>Resolve</span>
+            <span class="text-xs font-mono">↵</span>
+          </button>
+        </form>
+        <div class="flex items-center justify-between mt-2.5 px-1 text-[11px] text-zinc-400 font-medium">
+          <span>Engineered by Himanshu Joshi for Dub Technologies, Inc.</span>
+          <span>Targeting Anycast: <code>76.76.21.21</code> & <code>cname.dub.co</code></span>
+        </div>
+      </div>
+
+    </div>
+  </section>
 
   <script>
     const chatBox = document.getElementById("chat-box");
@@ -109,16 +215,16 @@
     function appendMessage(role, content, isMarkdown = false) {
       const isUser = role === "user";
       const wrapper = document.createElement("div");
-      wrapper.className = `flex items-start space-x-3 ${isUser ? 'justify-end' : ''}`;
+      wrapper.className = `flex items-start space-x-3.5 ${isUser ? 'justify-end' : ''}`;
 
       const avatar = document.createElement("div");
-      avatar.className = `w-8 h-8 rounded-full flex items-center justify-center text-xs font-bold text-white shrink-0 mt-1 ${isUser ? 'bg-zinc-700 order-2 ml-3' : 'bg-blue-600'}`;
-      avatar.innerText = isUser ? "YOU" : "AI";
+      avatar.className = `w-8 h-8 rounded-lg flex items-center justify-center font-bold text-xs shrink-0 mt-0.5 shadow-sm ${isUser ? 'bg-zinc-800 text-white order-2 ml-3' : 'bg-black text-white'}`;
+      avatar.innerText = isUser ? "YOU" : "dub";
 
       const bubble = document.createElement("div");
       bubble.className = isUser 
-        ? "bg-blue-600/90 text-white rounded-2xl rounded-tr-sm p-4 text-sm max-w-[85%] leading-relaxed shadow"
-        : "bg-zinc-800/90 border border-zinc-700/60 rounded-2xl rounded-tl-sm p-4 text-sm text-zinc-200 max-w-[90%] leading-relaxed shadow markdown-body";
+        ? "bg-black text-white rounded-2xl rounded-tr-xs p-4 text-sm max-w-[85%] leading-relaxed shadow-sm font-medium"
+        : "bg-zinc-50 border border-zinc-200/90 rounded-2xl rounded-tl-xs p-5 text-sm text-zinc-800 max-w-[90%] leading-relaxed shadow-xs markdown-body";
 
       if (isMarkdown && !isUser) {
         bubble.innerHTML = marked.parse(content);
@@ -150,14 +256,14 @@
 
       // Create Assistant bubble placeholder for live stream
       const wrapper = document.createElement("div");
-      wrapper.className = "flex items-start space-x-3";
+      wrapper.className = "flex items-start space-x-3.5";
       const avatar = document.createElement("div");
-      avatar.className = "w-8 h-8 rounded-full flex items-center justify-center text-xs font-bold text-white shrink-0 mt-1 bg-blue-600 shadow";
-      avatar.innerText = "AI";
+      avatar.className = "w-8 h-8 rounded-lg flex items-center justify-center text-xs font-bold text-white shrink-0 mt-0.5 bg-black shadow-sm";
+      avatar.innerText = "dub";
 
       const bubble = document.createElement("div");
-      bubble.className = "bg-zinc-800/90 border border-zinc-700/60 rounded-2xl rounded-tl-sm p-4 text-sm text-zinc-200 max-w-[90%] leading-relaxed shadow markdown-body";
-      bubble.innerHTML = '<span class="inline-block w-2 h-4 bg-blue-400 animate-pulse align-middle"></span>';
+      bubble.className = "bg-zinc-50 border border-zinc-200/90 rounded-2xl rounded-tl-xs p-5 text-sm text-zinc-800 max-w-[90%] leading-relaxed shadow-xs markdown-body";
+      bubble.innerHTML = '<span class="cursor-blink"></span>';
 
       wrapper.appendChild(avatar);
       wrapper.appendChild(bubble);
@@ -183,7 +289,7 @@
 
           buffer += decoder.decode(value, { stream: true });
           const lines = buffer.split("\n\n");
-          buffer = lines.pop(); // keep incomplete chunk
+          buffer = lines.pop();
 
           for (const line of lines) {
             const trimmed = line.trim();
@@ -198,20 +304,19 @@
               const parsed = JSON.parse(dataStr);
               if (parsed.token) {
                 accumulated += parsed.token;
-                bubble.innerHTML = marked.parse(accumulated) + '<span class="inline-block w-1.5 h-3.5 bg-blue-400 ml-1 animate-pulse align-middle"></span>';
+                bubble.innerHTML = marked.parse(accumulated) + '<span class="cursor-blink"></span>';
                 chatBox.scrollTop = chatBox.scrollHeight;
               }
             } catch (err) {}
           }
         }
 
-        // Final render without cursor
         bubble.innerHTML = marked.parse(accumulated);
       } catch (err) {
-        bubble.innerHTML = "<p class='text-red-400'>⚠️ Error streaming response from Dub Support API. Make sure the server is running.</p>";
+        bubble.innerHTML = "<p class='text-red-500 font-medium'>⚠️ Error streaming response from Dub Support API. Make sure the server is running.</p>";
       } finally {
         sendBtn.disabled = false;
-        sendBtn.innerHTML = "<span>Resolve</span><span class='text-xs'>↵</span>";
+        sendBtn.innerHTML = "<span>Resolve</span><span class='text-xs font-mono'>↵</span>";
         chatBox.scrollTop = chatBox.scrollHeight;
       }
     }
