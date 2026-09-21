@@ -5,6 +5,7 @@ import asyncio
 import json
 import os
 import sys
+from typing import Optional
 from fastapi import FastAPI, HTTPException
 from fastapi.middleware.cors import CORSMiddleware
 from fastapi.responses import HTMLResponse, JSONResponse, StreamingResponse
@@ -38,6 +39,9 @@ engine = DubSupportEngine()
 # Request body models using Pydantic for validation
 class ChatRequest(BaseModel):
     query: str = Field(..., description="User question or domain name to check.")
+    session_id: Optional[str] = Field(None, description="Optional session ID for multi-turn conversation memory.")
+
+ChatRequest.model_rebuild()
 
 
 class WebhookVerifyRequest(BaseModel):
@@ -45,15 +49,19 @@ class WebhookVerifyRequest(BaseModel):
     signature: str = Field(..., description="The signature header from Dub.")
     secret: str = Field(..., description="Your webhook secret key.")
 
+WebhookVerifyRequest.model_rebuild()
+
 
 @app.get("/health")
 def health_check():
-    """Simple health check endpoint."""
+    """Simple health check endpoint returning service status and LLM availability."""
     return {
         "status": "healthy",
         "service": "dubpilot",
         "version": "1.0.0",
         "knowledge_articles_loaded": len(engine.articles),
+        "llm_engine": engine.llm.model,
+        "llm_online": engine.llm.is_available(),
     }
 
 
@@ -86,27 +94,20 @@ def verify_webhook(req: WebhookVerifyRequest):
 
 @app.post("/api/chat")
 def handle_chat(req: ChatRequest):
-    """Answers a question and returns the full response at once."""
+    """Answers a question using LLaMA 3.2 with verified Dub.co context and DNS telemetry."""
     if not req.query.strip():
         raise HTTPException(status_code=400, detail="Query cannot be empty.")
-    return engine.resolve_ticket(req.query)
+    return engine.resolve_ticket(req.query, session_id=req.session_id)
 
 
-async def sse_chat_generator(query: str):
+async def sse_chat_generator(query: str, session_id: Optional[str] = None):
     """
-    Streams the response word by word using Server-Sent Events (SSE).
-    This gives an instant, typewriter-style feel in the UI.
+    Streams tokens in real time directly from local LLaMA 3.2 via Ollama.
+    Falls back cleanly to deterministic streaming if Ollama is busy or offline.
     """
-    result = engine.resolve_ticket(query)
-    full_markdown = result["solution_markdown"]
-
-    # Send words one by one with a tiny delay
-    words = full_markdown.split(" ")
-    for i, word in enumerate(words):
-        chunk = word + (" " if i < len(words) - 1 else "")
+    async for chunk in engine.stream_ticket(query, session_id=session_id):
         payload = json.dumps({"token": chunk})
         yield f"data: {payload}\n\n"
-        await asyncio.sleep(0.015)
 
     # Signal to the browser that we are done
     yield "data: [DONE]\n\n"
@@ -118,7 +119,7 @@ async def handle_chat_stream(req: ChatRequest):
     if not req.query.strip():
         raise HTTPException(status_code=400, detail="Query cannot be empty.")
     return StreamingResponse(
-        sse_chat_generator(req.query),
+        sse_chat_generator(req.query, session_id=req.session_id),
         media_type="text/event-stream",
         headers={
             "Cache-Control": "no-cache",

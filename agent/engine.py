@@ -7,12 +7,13 @@ import re
 from typing import Dict, List, Any, Optional
 
 from agent.tools import check_domain_dns, check_domain_ssl
+from agent.llm import OllamaLLM
 
 
 class DubSupportEngine:
     """
-    Handles user support queries by looking up verified solutions
-    and running live DNS/SSL network checks.
+    Handles user support queries by combining live DNS/SSL network checks,
+    curated Dub.co troubleshooting playbooks, and local LLaMA 3.2 reasoning via Ollama.
     """
 
     def __init__(self, kb_path: Optional[str] = None):
@@ -24,6 +25,7 @@ class DubSupportEngine:
         self.kb_path = kb_path
         self.articles = []
         self._load_knowledge_base()
+        self.llm = OllamaLLM()
 
     def _load_knowledge_base(self):
         # Load all help articles into memory so lookups are fast
@@ -122,40 +124,113 @@ class DubSupportEngine:
         # Build the final answer sections
         response_sections = []
 
-        # 1. Add the Live DNS Telemetry box if a domain was checked
-        if dns_diag:
-            status_emoji = "✅" if dns_diag["status"] == "CORRECT" else "⚠️"
-            telemetry_lines = [
-                f"### {status_emoji} Real-Time DNS Telemetry for `{dns_diag['domain']}`\n",
-                f"• **Current Resolved IPs:** `{', '.join(dns_diag['resolved_ips']) if dns_diag['resolved_ips'] else 'None (Unresolved)'}`",
-                f"• **Expected Target:** `{dns_diag['expected_target']}`",
-            ]
-            if "ssl_info" in dns_diag:
-                ssl_data = dns_diag["ssl_info"]
-                ssl_desc = f"✓ Valid TLS Handshake (Issuer: {ssl_data.get('issuer') or 'Active'})" if ssl_data.get("ssl_active") else f"✗ TLS Handshake Error ({ssl_data.get('error') or 'Unreachable'})"
-                telemetry_lines.append(f"• **Port 443 SSL Probe:** `{ssl_desc}`")
-            telemetry_lines.append(f"• **Live Diagnosis:** {dns_diag['diagnosis']}")
-            telemetry_lines.append(f"• **Action Required:** {dns_diag['action_required']}\n")
-            response_sections.append("\n".join(telemetry_lines))
+    def _build_telemetry_markdown(self, dns_diag: Dict[str, Any]) -> str:
+        # Formats live DNS and SSL socket probe results into a clean markdown box
+        status_emoji = "✅" if dns_diag["status"] == "CORRECT" else "⚠️"
+        lines = [
+            f"### {status_emoji} Real-Time DNS Telemetry for `{dns_diag['domain']}`\n",
+            f"• **Current Resolved IPs:** `{', '.join(dns_diag['resolved_ips']) if dns_diag['resolved_ips'] else 'None (Unresolved)'}`",
+            f"• **Expected Target:** `{dns_diag['expected_target']}`",
+        ]
+        if "ssl_info" in dns_diag:
+            ssl_data = dns_diag["ssl_info"]
+            ssl_desc = f"✓ Valid TLS Handshake (Issuer: {ssl_data.get('issuer') or 'Active'})" if ssl_data.get("ssl_active") else f"✗ TLS Handshake Error ({ssl_data.get('error') or 'Unreachable'})"
+            lines.append(f"• **Port 443 SSL Probe:** `{ssl_desc}`")
+        lines.append(f"• **Live Diagnosis:** {dns_diag['diagnosis']}")
+        lines.append(f"• **Action Required:** {dns_diag['action_required']}\n")
+        return "\n".join(lines)
 
-        # 2. Add the verified solution from the knowledge base
+    def _build_system_prompt(self, kb_matches: List[Dict[str, Any]], dns_diag: Optional[Dict[str, Any]] = None) -> str:
+        # Injects verified playbooks and telemetry into LLaMA 3.2
+        kb_context = "\n\n".join([f"### {a['title']}\n{a['solution']}" for a in kb_matches[:3]])
+        telemetry_txt = ""
+        if dns_diag:
+            telemetry_txt = (
+                f"\nLIVE TELEMETRY RESULT:\n"
+                f"Domain: {dns_diag['domain']}\n"
+                f"Status: {dns_diag['status']}\n"
+                f"Resolved IPs: {dns_diag['resolved_ips']}\n"
+                f"Diagnosis: {dns_diag['diagnosis']}\n"
+                f"Action Required: {dns_diag['action_required']}\n"
+            )
+
+        return (
+            "You are DubPilot, the official AI Technical Support Engineer for Dub.co.\n"
+            "Answer the user's issue accurately, crisply, and authoritatively using the verified Dub.co context below.\n"
+            "STRICT RULES:\n"
+            "- Apex / Root domains: A Record pointing to 76.76.21.21.\n"
+            "- Subdomains: CNAME record pointing to cname.dub.co.\n"
+            "- Cloudflare Proxy: Grey Cloud (DNS Only) recommended, or SSL mode Full (Strict).\n"
+            "- Rate Limits: Free=60/min, Pro=600/min, Business=1200/min. For batch, use POST /links/bulk.\n"
+            "- Webhook verification: HMAC-SHA256 with Dub-Signature header.\n"
+            "- Structure your answer with bold headings, bullet points, and code blocks.\n\n"
+            f"VERIFIED DUB PLAYBOOKS:\n{kb_context}\n"
+            f"{telemetry_txt}"
+        )
+
+    def resolve_ticket(
+        self,
+        user_query: str,
+        session_id: Optional[str] = None,
+        use_llm: bool = True
+    ) -> Dict[str, Any]:
+        """
+        Answers a support ticket using LLaMA 3.2 via Ollama with verified grounding.
+        Falls back to deterministic knowledge base resolution if Ollama is offline.
+        """
+        clean_query = user_query.strip()
+        detected_domain = self.extract_domain(clean_query)
+        dns_diag = None
+
+        # Live network probe
+        if detected_domain and any(k in clean_query.lower() for k in ["domain", "cname", "dns", "ssl", "not working", "setup", "link"]):
+            dns_diag = check_domain_dns(detected_domain)
+            if any(s in clean_query.lower() for s in ["ssl", "525", "cert", "https"]):
+                dns_diag["ssl_info"] = check_domain_ssl(detected_domain)
+
+        kb_matches = self.search_kb(clean_query)
+        telemetry_md = self._build_telemetry_markdown(dns_diag) if dns_diag else ""
+
+        # Try generating via LLaMA 3.2 if available
+        if use_llm and self.llm.is_available():
+            system_prompt = self._build_system_prompt(kb_matches, dns_diag)
+            history = self.llm.memory.get_history(session_id or "")
+            messages = list(history) + [{"role": "user", "content": clean_query}]
+
+            llm_text = self.llm.generate(messages, system_prompt=system_prompt)
+            if llm_text:
+                self.llm.memory.add_turn(session_id or "", clean_query, llm_text)
+                final_text = f"{telemetry_md}\n\n{llm_text}".strip() if telemetry_md else llm_text
+                return {
+                    "query": user_query,
+                    "session_id": session_id,
+                    "detected_domain": detected_domain,
+                    "dns_diagnostic": dns_diag,
+                    "solution_markdown": final_text,
+                    "articles_referenced": [a["id"] for a in kb_matches],
+                    "engine_used": "llama3.2:3b (ollama)",
+                }
+
+        # Deterministic Fallback if Ollama is offline or generation failed
+        response_sections = []
+        if telemetry_md:
+            response_sections.append(telemetry_md)
+
         if kb_matches:
             top_article = kb_matches[0]
             response_sections.append(
                 f"### 📘 Solution: {top_article['title']}\n\n"
                 f"{top_article['solution']}\n"
             )
-            # Mention any other related articles
             if len(kb_matches) > 1:
                 response_sections.append(
                     f"**Related Topics:**\n" +
                     "\n".join([f"• *{a['title']}*" for a in kb_matches[1:]]) + "\n"
                 )
         else:
-            # Friendly greeting fallback
             if any(w in clean_query.lower() for w in ["hi", "hello", "hey"]):
                 response_sections.append(
-                    "Hello! I am **DubPilot**, your autonomous technical support co-pilot for Dub.co. I can help you with:\n"
+                    "Hello! I am **DubPilot**, your autonomous technical support engineer for Dub.co. I can help you with:\n"
                     "• Custom Domain DNS setup (Apex A record or Subdomain CNAME)\n"
                     "• Cloudflare SSL 525 & ERR_SSL_PROTOCOL_ERROR fixes\n"
                     "• API rate limits, 429 backoff & SDK link creation\n"
@@ -172,8 +247,65 @@ class DubSupportEngine:
         final_text = "\n".join(response_sections)
         return {
             "query": user_query,
+            "session_id": session_id,
             "detected_domain": detected_domain,
             "dns_diagnostic": dns_diag,
             "solution_markdown": final_text,
             "articles_referenced": [a["id"] for a in kb_matches],
+            "engine_used": "deterministic_kb_fallback",
         }
+
+    async def stream_ticket(
+        self,
+        user_query: str,
+        session_id: Optional[str] = None
+    ) -> AsyncIterator[str]:
+        """
+        Asynchronously streams the response tokens in real-time.
+        Streams telemetry status first, then streams LLaMA 3.2 tokens live.
+        """
+        import asyncio
+        clean_query = user_query.strip()
+        detected_domain = self.extract_domain(clean_query)
+        dns_diag = None
+
+        if detected_domain and any(k in clean_query.lower() for k in ["domain", "cname", "dns", "ssl", "not working", "setup", "link"]):
+            dns_diag = check_domain_dns(detected_domain)
+            if any(s in clean_query.lower() for s in ["ssl", "525", "cert", "https"]):
+                dns_diag["ssl_info"] = check_domain_ssl(detected_domain)
+
+        kb_matches = self.search_kb(clean_query)
+        telemetry_md = self._build_telemetry_markdown(dns_diag) if dns_diag else ""
+
+        # Yield telemetry badge immediately if present
+        if telemetry_md:
+            yield f"{telemetry_md}\n\n"
+
+        # Stream via LLaMA if available
+        if self.llm.is_available():
+            system_prompt = self._build_system_prompt(kb_matches, dns_diag)
+            history = self.llm.memory.get_history(session_id or "")
+            messages = list(history) + [{"role": "user", "content": clean_query}]
+
+            full_llm_text = ""
+            async for token in self.llm.stream_chat(messages, system_prompt=system_prompt):
+                full_llm_text += token
+                yield token
+
+            if full_llm_text:
+                self.llm.memory.add_turn(session_id or "", clean_query, full_llm_text)
+                return
+
+        # Fallback: stream deterministic response word by word
+        fallback_res = self.resolve_ticket(clean_query, session_id=session_id, use_llm=False)
+        content = fallback_res["solution_markdown"]
+        # Skip telemetry if we already yielded it above
+        if telemetry_md and content.startswith(telemetry_md):
+            content = content[len(telemetry_md):].strip()
+
+        words = content.split(" ")
+        for i, word in enumerate(words):
+            chunk = word + (" " if i < len(words) - 1 else "")
+            yield chunk
+            await asyncio.sleep(0.012)
+
