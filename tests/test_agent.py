@@ -17,9 +17,17 @@ def client():
 def test_knowledge_base_loading():
     # Make sure our knowledge base loads all help articles from the JSON file
     engine = DubSupportEngine()
-    assert len(engine.articles) >= 8
+    assert len(engine.articles) >= 15
     categories = set(a.get("category") for a in engine.articles)
-    assert "Custom Domains & DNS Configuration" in categories
+    assert any("Custom Domains" in c for c in categories)
+
+
+def test_broken_link_troubleshooting_resolution():
+    # Test that queries about links not working match the broken link guide
+    engine = DubSupportEngine()
+    res = engine.resolve_ticket("agter shortning my url from dub my url is not working")
+    assert "short_link_not_working" in res["articles_referenced"]
+    assert "Shortened Link Not Working" in res["solution_markdown"]
 
 
 def test_webhook_hmac_verification():
@@ -102,3 +110,33 @@ def test_api_endpoints(client):
     r_wh = client.post("/api/verify-webhook", json=wh_payload)
     assert r_wh.status_code == 200
     assert r_wh.json()["verified"] is False
+
+
+def test_github_issue_resolutions():
+    # Verify that real-world problems reported on GitHub resolve to the exact guides
+    engine = DubSupportEngine()
+
+    # 1. Short link case sensitivity (#363)
+    res1 = engine.resolve_ticket("Why is my short link case sensitive or returning 404 in lowercase?")
+    assert "slug_case_sensitivity" in res1["articles_referenced"]
+
+    # 2. Custom 404 fallback / Default redirect (#2384, #495)
+    res2 = engine.resolve_ticket("How to redirect 404 or root domain to my homepage?")
+    assert "default_redirect_404_fallback" in res2["articles_referenced"]
+
+    # 3. Mobile deep link & custom URI schemes (#27, #2870)
+    res3 = engine.resolve_ticket("How do I deep link directly into my mobile app or spotify scheme?")
+    assert "mobile_deeplinking_universal_links" in res3["articles_referenced"]
+
+    # 4. Self hosting with Docker (#12, #25, #378)
+    res4 = engine.resolve_ticket("How to self host Dub using docker and docker compose?")
+    assert "self_hosting_docker_setup" in res4["articles_referenced"]
+
+    # 5. Export analytics to CSV (#97)
+    res5 = engine.resolve_ticket("How do I export my click analytics data to CSV?")
+    assert "analytics_csv_export" in res5["articles_referenced"]
+
+    # 6. GoDaddy duplicate subdomain bug
+    res6 = engine.resolve_ticket("GoDaddy DNS duplicate subdomain setup for Dub")
+    assert "godaddy_dns_setup" in res6["articles_referenced"]
+

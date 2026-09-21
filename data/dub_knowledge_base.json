@@ -1,105 +1,615 @@
 {
   "company": "Dub.co",
   "product": "Modern Link Attribution & Shortening Infrastructure",
+  "version": "2.0.0",
   "categories": [
     {
-      "id": "troubleshooting_links",
-      "title": "Link Redirection & Troubleshooting",
+      "id": "link_troubleshooting",
+      "title": "Link Routing & Redirection Issues",
       "articles": [
         {
           "id": "short_link_not_working",
           "title": "Shortened Link Not Working or Redirection Failing",
           "problem": "After shortening my URL from Dub, my link is not working, showing 404, or not redirecting to the destination.",
-          "solution": "If your shortened URL is failing to redirect or showing an error, check these 4 common causes:\n\n### 1. Custom Domain DNS Inactive\nIf you shortened the link using a **custom domain** (e.g. `go.yourbrand.com`), it **must** have its DNS configured in your domain registrar:\n• **Subdomain (e.g. go.brand.com):** CNAME pointing to `cname.dub.co`\n• **Root Domain (e.g. brand.com):** A Record pointing to `76.76.21.21`\n*(Tip: Share your domain name here to run a live socket DNS probe right now!)*\n\n### 2. Broken Destination URL\nDub forwards visitors directly to your original destination URL. If your target site is down, returning a `404 Not Found` or `500 Server Error`, the short link will look broken. Test your destination URL directly in a private/incognito browser window.\n\n### 3. Link Status (Archived or Expired)\nIn your Dub Dashboard under **Links**:\n• Verify the link is toggled **Active** (not Archived).\n• Check if an **Expiration Date** or **Click Limit** was previously set on the link.\n\n### 4. SSL Certificate Provisioning Delay\nIf you recently connected your custom domain, Let's Encrypt automated SSL issuance takes **5 to 15 minutes** to propagate worldwide.",
-          "keywords": ["not working", "shortening", "shortened url", "link not working", "url not working", "after shortening", "redirect failing", "broken link", "not redirecting", "404", "destination url"]
+          "solution": "If your shortened URL is failing to redirect or showing an error, check these 4 common root causes:\n\n### 1. Custom Domain DNS Inactive\nIf you shortened the link using a **custom domain** (e.g. `go.yourbrand.com`), its DNS records must be active:\n• **Subdomain (e.g. go.brand.com):** CNAME pointing to `cname.dub.co`\n• **Root Domain (e.g. brand.com):** A Record pointing to `76.76.21.21`\n*(Tip: Type your domain below to run a live socket DNS diagnostic!)*\n\n### 2. Broken Destination URL\nDub forwards visitors directly to your target destination URL. If your target URL is down, returning a `404 Not Found` or `500 Server Error`, the short link will appear broken. Test your target URL directly in an incognito window.\n\n### 3. Link Status (Archived, Expired, or Click Limit)\nIn your Dub Dashboard under **Links**:\n• Verify the link is toggled **Active** (not Archived).\n• Check if an **Expiration Date** or **Click Limit** was previously configured.\n\n### 4. SSL Certificate Provisioning Delay\nIf you recently connected your custom domain, Let's Encrypt automated SSL issuance takes **5 to 15 minutes** to propagate worldwide.",
+          "keywords": [
+            "not working",
+            "shortening",
+            "shortened url",
+            "link not working",
+            "url not working",
+            "after shortening",
+            "redirect failing",
+            "broken link",
+            "not redirecting",
+            "404",
+            "destination url",
+            "broken url"
+          ]
+        },
+        {
+          "id": "utm_query_parameters",
+          "title": "UTM Parameters & Query String Forwarding",
+          "problem": "Are UTM tags and query parameters preserved when users click my short link?",
+          "solution": "### Yes, Dub Automatically Forwards Query Parameters!\n\nWhen a user clicks `yourbrand.com/sale?ref=twitter&utm_medium=social`, Dub automatically appends all incoming query parameters to the destination URL:\n\n• **Original Destination:** `https://myshop.com/product`\n• **Clicked Link:** `https://yourbrand.com/sale?utm_source=newsletter`\n• **Final Redirect:** `https://myshop.com/product?utm_source=newsletter`\n\n### Overriding Parameters:\nIf your short link already has built-in UTM parameters set in the Dub dashboard, incoming query parameters will cleanly merge without duplicating keys.",
+          "keywords": [
+            "utm",
+            "query parameters",
+            "utm_source",
+            "utm_medium",
+            "tracking tags",
+            "ref",
+            "parameter forwarding",
+            "preserve utm"
+          ]
+        },
+        {
+          "id": "password_protected_links",
+          "title": "Password-Protected Links",
+          "problem": "How do password-protected links work or why is my password not working?",
+          "solution": "Dub allows you to gate any short link with a custom password.\n\n### How It Works:\n1. When a visitor clicks the link, Dub presents a branded, secure password prompt.\n2. Upon entering the correct password, Dub securely sets an encrypted session cookie and redirects to the destination.\n\n### Troubleshooting Password Issues:\n• **Invalid Password:** Passwords are case-sensitive. Verify the exact string in your link settings.\n• **Removing Password:** Go to Dub Dashboard ➔ Edit Link ➔ Clear the **Password** field ➔ Save.",
+          "keywords": [
+            "password",
+            "password protected",
+            "protected link",
+            "unlock link",
+            "password error",
+            "enter password"
+          ]
+        },
+        {
+          "id": "expired_links_behavior",
+          "title": "Expired Links & Click Limit Handling",
+          "problem": "What happens when a link expires or reaches its click limit?",
+          "solution": "### Expired Link Behavior:\nWhen a link reaches its `expiresAt` timestamp or exceeds its configured **Click Limit**:\n\n1. **Custom Expired URL:** If configured, Dub redirects visitors to your custom fallback page (e.g. `https://yoursite.com/offer-ended`).\n2. **Default Behavior:** If no fallback is configured, visitors see Dub's clean default 'Link Expired' landing page.\n\n### How to Reactivate:\nGo to your Dub Dashboard ➔ Click on the expired link ➔ Update or remove the **Expiration Date** or increase the **Click Limit**.",
+          "keywords": [
+            "expired",
+            "click limit",
+            "link expired",
+            "expiresat",
+            "expiredurl",
+            "limit reached",
+            "offer ended"
+          ]
+        },
+        {
+          "id": "geo_device_targeting",
+          "title": "Geo-Targeting & Device-Targeting (iOS / Android / Desktop)",
+          "problem": "How do I redirect iPhone users to App Store and Android users to Google Play?",
+          "solution": "Dub supports dynamic edge-routing based on device and geolocation without latency penalties.\n\n### Configuration Options:\n• **iOS Redirect:** Set target URL for iPhone/iPad (e.g. `https://apps.apple.com/...`).\n• **Android Redirect:** Set target URL for Android devices (e.g. `https://play.google.com/...`).\n• **Geo-Location:** Route visitors by country code (e.g. US visitors to `.com`, UK visitors to `.co.uk`).\n• **Default Fallback:** Catch-all destination for all other platforms and desktops.",
+          "keywords": [
+            "geo targeting",
+            "device targeting",
+            "ios",
+            "android",
+            "app store",
+            "play store",
+            "country redirect",
+            "mobile redirect"
+          ]
+        },
+        {
+          "id": "social_preview_og_tags",
+          "title": "Custom Social Preview Cards (Open Graph / Twitter Cards)",
+          "problem": "My social preview image or title is not showing correctly when sharing on Twitter, Slack, or LinkedIn.",
+          "solution": "Dub allows you to override default Open Graph (OG) metadata for any short link.\n\n### How to Fix Social Preview Caching:\n1. **Verify OG Image URL:** Ensure your preview image is publicly accessible, HTTPS, and ideally `1200x630px` (aspect ratio 1.91:1).\n2. **Clear Social Media Cache:**\n   • **Twitter/X:** Use Twitter Card Validator or paste link in a draft tweet.\n   • **LinkedIn:** Use the [LinkedIn Post Inspector](https://www.linkedin.com/post-inspector/).\n   • **Facebook:** Use the [Meta Sharing Debugger](https://developers.facebook.com/tools/debug/).\n3. **Custom Domain Benefit:** Using a custom branded domain ensures social networks display your brand instead of a generic domain.",
+          "keywords": [
+            "og image",
+            "social preview",
+            "open graph",
+            "twitter card",
+            "preview image",
+            "thumbnail",
+            "linkedin preview",
+            "meta tags"
+          ]
+        },
+        {
+          "id": "spam_filter_flagged",
+          "title": "Short Link Flagged as Spam on LinkedIn, Twitter, or WhatsApp",
+          "problem": "My short link using dub.sh was blocked or flagged as malicious/spam on social media.",
+          "solution": "### Root Cause:\nPublic shared domains like `dub.sh` or `bit.ly` occasionally get flagged by aggressive third-party spam heuristics when bad actors shorten suspicious URLs.\n\n### The Permanent Solution: Use a Custom Branded Domain\n1. Connect your own branded custom domain (e.g. `links.yourcompany.com` or `go.yourcompany.com`).\n2. Branded domains carry your own domain reputation, 100% bypass third-party spam blocklists, and increase click-through rates by up to 39%.\n3. Custom domains are included for free on Dub.",
+          "keywords": [
+            "flagged",
+            "spam",
+            "blocked",
+            "malicious",
+            "linkedin blocked",
+            "twitter blocked",
+            "dub.sh spam",
+            "reputation"
+          ]
+        },
+        {
+          "id": "slug_case_sensitivity",
+          "title": "Short Link Case Sensitivity & Lowercase Rewriting",
+          "problem": "Why does my short link fail with 404 when typed in lowercase, or how to enable case-insensitive links?",
+          "solution": "### How Case Sensitivity Works in Dub\n\nAccording to web standards (RFC 3986), URL paths and slugs are **case-sensitive** by default (`/MyLink` is technically distinct from `/mylink`).\n\n### 1. Case-Insensitive Matching\nIn your Dub Dashboard under **Settings ➔ Domains**:\n• Toggle **\"Case-insensitive matching\"** to ON.\n• When enabled, incoming visits to `/SummerSale`, `/summersale`, and `/SUMMERSALE` will all seamlessly resolve to the same destination URL.\n\n### 2. Automatic Lowercase Slugs\nWhen creating links manually or via API:\n• Best practice is to save slugs in lowercase (e.g., `brand.com/spring-sale`).\n• If an uppercase slug is entered, Dub will automatically recommend lowercased aliases to prevent user 404 errors.",
+          "keywords": [
+            "case sensitive",
+            "case sensitivity",
+            "lowercase",
+            "capital letters",
+            "slug case",
+            "uppercase",
+            "404 lowercase",
+            "case insensitive"
+          ]
+        },
+        {
+          "id": "default_redirect_404_fallback",
+          "title": "Custom 404 Fallback & Root Domain Default Redirect",
+          "problem": "When visitors hit my root domain (go.brand.com/) or an invalid/non-existent short link, how do I redirect them to my homepage instead of showing 404?",
+          "solution": "### Setting Default Redirect & 404 Fallback URLs\n\nBy default, visiting a custom domain's root (`https://go.yourbrand.com/`) or a typoed link returns a Dub 404 error page. You can customize this behavior:\n\n### 1. Root Domain Default Redirect\n1. Go to Dub Dashboard ➔ **Settings ➔ Domains**.\n2. Click the three dots `...` next to your domain ➔ **Edit Domain**.\n3. In the **Default Redirect URL** field, enter your main website:\n   `https://yourcompany.com`\n4. Now, any visitor navigating to `go.yourbrand.com` directly will land on your main website.\n\n### 2. 404 Fallback Destination\nIn the same domain settings drawer:\n• Set **404 Fallback URL** to a custom landing page or search page (e.g. `https://yourcompany.com/links`).\n• Any mistyped, deleted, or expired slug will automatically forward visitors there rather than showing an error.",
+          "keywords": [
+            "404 fallback",
+            "default redirect",
+            "root redirect",
+            "invalid link redirect",
+            "redirect homepage",
+            "fallback url",
+            "root domain redirect",
+            "catch all"
+          ]
+        },
+        {
+          "id": "mobile_deeplinking_universal_links",
+          "title": "Mobile Deep Linking, Universal Links & Custom App URI Schemes",
+          "problem": "How do I deep link directly into native iOS or Android mobile apps (e.g. spotify://, slack://, myapp://) with Dub?",
+          "solution": "### Deep Linking Configuration in Dub\n\nDub supports routing mobile users directly into native mobile applications via **Custom URI Schemes** and **Universal Links / App Links**.\n\n### How to Configure in Dashboard:\n1. When creating or editing a link, open the **Targeting** drawer.\n2. Under **Device Targeting**:\n   • **iOS:** Enter your custom app scheme (e.g. `myapp://product/123`) or App Store link (`https://apps.apple.com/...`).\n   • **Android:** Enter your Android intent or Google Play link (`https://play.google.com/...`).\n   • **Default (Desktop/Web):** Enter the standard web destination (`https://mywebsite.com/product/123`).\n\n### Deep Link Fallback Flow:\n• Mobile user has app installed ➔ Phone opens the native app screen directly.\n• Mobile user does not have app installed ➔ Dub redirects to App Store / Google Play fallback.\n• Desktop user ➔ Opens the web version seamlessly.",
+          "keywords": [
+            "deeplink",
+            "deep link",
+            "universal link",
+            "app link",
+            "uri scheme",
+            "open app",
+            "native app",
+            "custom scheme",
+            "ios app",
+            "android app"
+          ]
         }
       ]
     },
     {
       "id": "custom_domains",
-      "title": "Custom Domains & DNS Configuration",
+      "title": "Custom Domains & DNS Troubleshooting",
       "articles": [
         {
           "id": "apex_domain_setup",
           "title": "Configuring an Apex / Root Domain (e.g. yourdomain.com)",
           "problem": "How do I configure my apex domain to work with Dub?",
-          "solution": "Add an **A Record** in your DNS provider:\n\n| Type | Name / Host | Target Value | TTL |\n| :--- | :--- | :--- | :--- |\n| **A** | `@` (or leave blank) | `76.76.21.21` | Auto / 3600 |\n\n*Note: Dub automatically redirects `www.yourdomain.com` to your root apex domain.*",
-          "keywords": ["apex domain", "root domain", "A record", "76.76.21.21", "custom domain", "dns"]
+          "solution": "Add an **A Record** in your DNS registrar (Cloudflare, Namecheap, GoDaddy):\n\n| Type | Name / Host | Target IP | TTL |\n| :--- | :--- | :--- | :--- |\n| **A** | `@` (or leave blank) | `76.76.21.21` | Auto / 3600 |\n\n*Note: Dub automatically handles redirecting `www.yourdomain.com` to your root apex domain.*",
+          "keywords": [
+            "apex domain",
+            "root domain",
+            "A record",
+            "76.76.21.21",
+            "custom domain",
+            "dns",
+            "apex setup"
+          ]
         },
         {
           "id": "subdomain_setup",
           "title": "Configuring a Subdomain (e.g. go.yourdomain.com, links.yourdomain.com)",
           "problem": "How do I configure a subdomain on Dub?",
-          "solution": "Add a **CNAME Record** in your DNS provider:\n\n| Type | Name / Host | Target Value | TTL |\n| :--- | :--- | :--- | :--- |\n| **CNAME** | `go` or `links` | `cname.dub.co` | Auto / 3600 |\n\nOnce added, DNS propagation takes roughly 5–15 minutes.",
-          "keywords": ["subdomain", "cname", "cname.dub.co", "links", "go"]
+          "solution": "Add a **CNAME Record** in your DNS provider:\n\n| Type | Name / Host | Target Value | TTL |\n| :--- | :--- | :--- | :--- |\n| **CNAME** | `go` or `links` | `cname.dub.co` | Auto / 3600 |\n\n*Tip: Never enter the full domain in the Host field unless your DNS registrar explicitly requires it (e.g. enter 'go', not 'go.yourdomain.com').*",
+          "keywords": [
+            "subdomain",
+            "cname",
+            "cname.dub.co",
+            "links",
+            "go",
+            "subdomain setup"
+          ]
         },
         {
           "id": "cloudflare_proxy_status",
           "title": "Cloudflare DNS: Grey Cloud (DNS Only) vs Orange Cloud (Proxied)",
           "problem": "My links are failing or throwing Error 525 / SSL handshake failed on Cloudflare.",
-          "solution": "### Root Cause\nCloudflare's default proxy (**Orange Cloud**) intercepts traffic before Let's Encrypt certificates can negotiate with Dub's edge servers.\n\n### How to Fix:\n1. **Recommended (Instant):** In your Cloudflare DNS tab, change the Proxy toggle to **DNS Only** (Grey Cloud).\n2. **If Orange Cloud is mandatory:** Go to Cloudflare Dashboard ➔ **SSL/TLS** ➔ Change encryption mode to **Full** or **Full (Strict)**. *(Never use 'Flexible' with Dub)*.",
-          "keywords": ["cloudflare", "orange cloud", "grey cloud", "dns only", "525", "ssl handshake failed", "flexible ssl"]
+          "solution": "### Root Cause\nCloudflare's default proxy (**Orange Cloud**) intercepts traffic before Let's Encrypt certificates can complete verification with Dub's edge servers.\n\n### How to Fix:\n1. **Recommended (Instant Fix):** In your Cloudflare DNS tab, click the orange cloud toggle to switch it to **DNS Only (Grey Cloud)**.\n2. **If Orange Cloud is mandatory:** Go to Cloudflare Dashboard ➔ **SSL/TLS** ➔ Change encryption mode to **Full** or **Full (Strict)**. *(Never use 'Flexible' mode)*.",
+          "keywords": [
+            "cloudflare",
+            "orange cloud",
+            "grey cloud",
+            "dns only",
+            "525",
+            "ssl handshake failed",
+            "flexible ssl",
+            "cloudflare proxy"
+          ]
+        },
+        {
+          "id": "cloudflare_redirect_loop_520",
+          "title": "ERR_TOO_MANY_REDIRECTS on Cloudflare",
+          "problem": "Domain gets stuck in an infinite redirect loop (ERR_TOO_MANY_REDIRECTS).",
+          "solution": "### Root Cause:\nThis happens when Cloudflare is set to **Flexible SSL**. Dub enforces HTTPS on port 443. Flexible SSL sends traffic to Dub over unencrypted HTTP (port 80), prompting Dub to redirect back to HTTPS, causing an infinite loop.\n\n### Fix:\nIn your Cloudflare dashboard, go to **SSL/TLS** ➔ Change SSL/TLS encryption mode from **Flexible** to **Full** or **Full (Strict)**.",
+          "keywords": [
+            "err_too_many_redirects",
+            "redirect loop",
+            "infinite redirect",
+            "flexible ssl loop",
+            "too many redirects"
+          ]
         },
         {
           "id": "ssl_certificate_pending",
           "title": "SSL Certificate Pending / ERR_SSL_PROTOCOL_ERROR",
           "problem": "My domain says 'Invalid configuration' or browser shows ERR_SSL_PROTOCOL_ERROR.",
           "solution": "1. SSL certificates are generated automatically via Let's Encrypt once your DNS records resolve.\n2. Global DNS propagation typically takes **5 to 15 minutes**.\n3. Make sure your domain points to `76.76.21.21` or `cname.dub.co`. Once resolved, click **Refresh** in your Dub domain dashboard.",
-          "keywords": ["ssl pending", "err_ssl_protocol_error", "certificate error", "invalid configuration", "propagation"]
+          "keywords": [
+            "ssl pending",
+            "err_ssl_protocol_error",
+            "certificate error",
+            "invalid configuration",
+            "propagation",
+            "ssl handshake"
+          ]
+        },
+        {
+          "id": "caa_records_blocking_ssl",
+          "title": "CAA Records Blocking SSL Issuance",
+          "problem": "SSL issuance fails because of Certificate Authority Authorization (CAA) records.",
+          "solution": "### Root Cause:\nIf your domain has CAA records in DNS, they restrict which Certificate Authorities can issue certificates for your domain.\n\n### Fix:\nAdd a CAA record in your DNS provider permitting Let's Encrypt:\n\n| Type | Name | Flag | Tag | Value |\n| :--- | :--- | :--- | :--- | :--- |\n| **CAA** | `@` | `0` | `issue` | `letsencrypt.org` |",
+          "keywords": [
+            "caa record",
+            "caa",
+            "certificate authority",
+            "letsencrypt.org",
+            "caa blocking",
+            "ssl failed caa"
+          ]
         },
         {
           "id": "vercel_domain_conflict",
           "title": "Domain Previously Used on Vercel (Ownership Verification)",
           "problem": "Dub error: 'Domain is already in use by another team/project on Vercel'.",
-          "solution": "Because Dub operates on Vercel Anycast infrastructure, verify ownership by adding a TXT record:\n\n| Type | Name / Host | Value |\n| :--- | :--- | :--- |\n| **TXT** | `_vercel` | *(Copy token from Dub dashboard)* |\n\nOnce verified, the previous project mapping will be released.",
-          "keywords": ["vercel conflict", "txt record", "_vercel", "already in use", "domain conflict"]
+          "solution": "Because Dub operates on Vercel Anycast edge infrastructure, verify ownership by adding a TXT record:\n\n| Type | Name / Host | Value |\n| :--- | :--- | :--- |\n| **TXT** | `_vercel` | *(Copy token from Dub dashboard)* |\n\nOnce verified, the previous project mapping will be automatically released.",
+          "keywords": [
+            "vercel conflict",
+            "txt record",
+            "_vercel",
+            "already in use",
+            "domain conflict",
+            "vercel error"
+          ]
+        },
+        {
+          "id": "godaddy_dns_setup",
+          "title": "GoDaddy DNS Configuration & Duplicate Subdomain Fix",
+          "problem": "How do I configure GoDaddy DNS for Dub and avoid the common duplicate subdomain bug?",
+          "solution": "### GoDaddy DNS Setup Guide\n\nFollow these exact steps in your GoDaddy DNS Manager:\n\n### For Subdomain (e.g. `go.yourdomain.com`):\n| Type | Name | Value | TTL |\n| :--- | :--- | :--- | :--- |\n| **CNAME** | `go` *(DO NOT enter go.yourdomain.com)* | `cname.dub.co` | 1/2 Hour |\n\n> ⚠️ **Common GoDaddy Trap:** GoDaddy automatically appends your root domain. If you enter `go.yourbrand.com` in the Name field, GoDaddy creates `go.yourbrand.com.yourbrand.com`, which will never resolve! Always enter just `go` or `links`.\n\n### For Root / Apex Domain (e.g. `yourdomain.com`):\n| Type | Name | Value | TTL |\n| :--- | :--- | :--- | :--- |\n| **A** | `@` | `76.76.21.21` | 1/2 Hour |\n\nDelete any existing parked domain records or conflicting A records on `@` before saving.",
+          "keywords": [
+            "godaddy",
+            "godaddy dns",
+            "godaddy cname",
+            "duplicate subdomain",
+            "godaddy setup",
+            "godaddy a record"
+          ]
+        },
+        {
+          "id": "namecheap_dns_setup",
+          "title": "Namecheap Advanced DNS Configuration",
+          "problem": "How do I configure Namecheap DNS records for Dub and disable parking pages?",
+          "solution": "### Namecheap DNS Setup Guide\n\n1. Log in to Namecheap ➔ Go to **Domain List** ➔ Click **Manage** next to your domain.\n2. Open the **Advanced DNS** tab.\n\n### Required Records:\n• **For Subdomain (`links.yourdomain.com`):**\n  - Type: `CNAME Record`\n  - Host: `links`\n  - Target: `cname.dub.co.` *(include or omit trailing dot based on UI)*\n  - TTL: `Automatic`\n\n• **For Root Apex (`yourdomain.com`):**\n  - Type: `A Record`\n  - Host: `@`\n  - Value: `76.76.21.21`\n  - TTL: `Automatic`\n\n### Troubleshooting Namecheap:\n• Ensure **Namecheap Parking Page** record (URL Redirect / Parking) is deleted.\n• If your nameservers are set to 'Namecheap Web Hosting DNS' or custom nameservers, Advanced DNS will not apply; switch nameservers to **Namecheap BasicDNS**.",
+          "keywords": [
+            "namecheap",
+            "namecheap dns",
+            "advanced dns",
+            "namecheap cname",
+            "parking page",
+            "namecheap setup"
+          ]
         }
       ]
     },
     {
-      "id": "api_and_sdk",
-      "title": "API, SDK & Rate Limits",
+      "id": "api_and_developer_sdk",
+      "title": "API, Developer SDK & Webhooks",
       "articles": [
         {
           "id": "rate_limits_tiers",
           "title": "API Rate Limits & 429 Too Many Requests",
           "problem": "I received HTTP 429 Too Many Requests when calling Dub API.",
           "solution": "### Rate Limit Thresholds (per minute):\n• **Free Plan:** 60 requests/min\n• **Pro Plan:** 600 requests/min\n• **Business Plan:** 1,200 requests/min\n• **Enterprise:** 3,000+ requests/min\n\n### How to Resolve:\n1. Check the `Retry-After` header to get the exact wait time in seconds.\n2. Inspect `X-RateLimit-Remaining` to track your request quota.\n3. For creating multiple links at once, use the **Bulk API** (`POST /links/bulk`) which processes up to 100 links per single request.",
-          "keywords": ["429", "rate limit", "too many requests", "retry-after", "x-ratelimit-remaining", "bulk"]
+          "keywords": [
+            "429",
+            "rate limit",
+            "too many requests",
+            "retry-after",
+            "x-ratelimit-remaining",
+            "bulk",
+            "rate limits"
+          ]
         },
         {
           "id": "link_creation_api",
           "title": "Creating Links via REST API & SDK",
           "problem": "How do I create a short link using Python or TypeScript?",
           "solution": "### 🚀 Create Short Link via REST API\n\n**Endpoint:** `POST https://api.dub.co/links`  \n**Headers:** `Authorization: Bearer <DUB_API_KEY>`\n\n**Payload (JSON):**\n```json\n{\n  \"url\": \"https://yourcompany.com/blog/article\",\n  \"domain\": \"go.yourdomain.com\",\n  \"key\": \"spring-sale\",\n  \"tags\": [\"marketing\", \"spring\"],\n  \"trackConversion\": true\n}\n```\n\n**Python SDK Example:**\n```python\nfrom dub import Dub\n\nclient = Dub(token=\"DUB_API_KEY\")\nlink = client.links.create(request={\n    \"url\": \"https://example.com\",\n    \"domain\": \"go.mybrand.com\"\n})\nprint(link.short_link)\n```",
-          "keywords": ["create link", "post /links", "api key", "python sdk", "typescript sdk", "how to create short link"]
+          "keywords": [
+            "create link",
+            "post /links",
+            "api key",
+            "python sdk",
+            "typescript sdk",
+            "how to create short link"
+          ]
+        },
+        {
+          "id": "bulk_links_api",
+          "title": "Bulk Link Creation API (High Volume)",
+          "problem": "How do I create thousands of links without hitting rate limits?",
+          "solution": "### Bulk Link Creation (`POST /links/bulk`)\n\nInstead of making individual API calls, use the bulk endpoint to process up to **100 links per single request**:\n\n**Endpoint:** `POST https://api.dub.co/links/bulk`\n\n```json\n[\n  { \"url\": \"https://acme.com/item1\", \"key\": \"item-1\" },\n  { \"url\": \"https://acme.com/item2\", \"key\": \"item-2\" }\n]\n```\n*Note: Bulk creation counts as 1 request against your rate limit threshold!*",
+          "keywords": [
+            "bulk api",
+            "bulk link creation",
+            "post /links/bulk",
+            "batch create",
+            "thousands of links"
+          ]
         },
         {
           "id": "slug_conflict_409",
           "title": "HTTP 409 Conflict: Key Already Exists",
           "problem": "API returns 409 Conflict when attempting to create a link.",
           "solution": "A link with that exact **slug / key** already exists for that domain.\n\n### Options:\n1. **Update existing link:** Use `PUT /links/{linkId}` or `PATCH /links/{linkId}`.\n2. **Generate random slug:** Omit the `key` field in your payload and Dub will automatically assign a clean 7-character hash.",
-          "keywords": ["409", "conflict", "slug exists", "duplicate key", "key already exists"]
-        }
-      ]
-    },
-    {
-      "id": "webhooks",
-      "title": "Webhooks & Event Delivery",
-      "articles": [
+          "keywords": [
+            "409",
+            "conflict",
+            "slug exists",
+            "duplicate key",
+            "key already exists"
+          ]
+        },
         {
-          "id": "webhook_events",
-          "title": "Supported Webhook Events & Global Configuration",
-          "problem": "Which webhook events does Dub support and how are they configured?",
-          "solution": "### Supported Webhook Events:\n• `link.created` — Fired when a new short link is generated.\n• `link.updated` — Fired when destination URL or metadata changes.\n• `link.deleted` — Fired when a link is archived or deleted.\n• `link.clicked` — Real-time event stream with geolocation, device, and referrer data.\n\n*Note: Bulk link imports (`POST /links/bulk`) do NOT trigger individual webhooks to avoid flooding receiver endpoints.*",
-          "keywords": ["webhooks", "link.created", "link.clicked", "events", "bulk webhooks"]
+          "id": "api_auth_401_403",
+          "title": "HTTP 401 Unauthorized & 403 Forbidden",
+          "problem": "API calls returning 401 Unauthorized or 403 Forbidden.",
+          "solution": "### 401 Unauthorized:\n• Ensure header `Authorization: Bearer <DUB_API_KEY>` is included.\n• Verify you did not accidentally copy extra whitespace or omit the `Bearer ` prefix.\n\n### 403 Forbidden:\n• Your API token does not have permission for the requested workspace.\n• In Dub Dashboard ➔ Settings ➔ **API Keys**, ensure the key is assigned to the active workspace.",
+          "keywords": [
+            "401",
+            "403",
+            "unauthorized",
+            "forbidden",
+            "api key error",
+            "invalid api key",
+            "permissions"
+          ]
+        },
+        {
+          "id": "qr_code_api",
+          "title": "Generating Dynamic QR Codes via API",
+          "problem": "How do I programmatically generate and customize QR codes for short links?",
+          "solution": "### QR Code Endpoint\n\n**Endpoint:** `GET https://api.dub.co/qr?url={url}`\n\n### Query Parameters:\n• `url` (required): Target short link URL.\n• `logo`: URL of your brand logo to embed in the center.\n• `size`: Image size in pixels (e.g. `600`).\n• `level`: Error correction level (`L`, `M`, `Q`, `H`). Defaults to `H` when logo is present.\n• `fgColor` / `bgColor`: Custom hex colors (e.g. `fgColor=%23000000`).",
+          "keywords": [
+            "qr code",
+            "generate qr",
+            "custom qr",
+            "qr api",
+            "logo qr"
+          ]
         },
         {
           "id": "webhook_signature_verification",
           "title": "Verifying Webhook HMAC SHA-256 Signatures",
           "problem": "How do I securely verify that an incoming webhook payload was sent by Dub?",
           "solution": "Dub signs each payload with your signing secret in the `Dub-Signature` header.\n\n### Python Verification Snippet:\n```python\nimport hmac\nimport hashlib\n\ndef verify_signature(payload_bytes: bytes, signature_header: str, secret: str) -> bool:\n    expected = hmac.new(\n        secret.encode(\"utf-8\"), \n        payload_bytes, \n        hashlib.sha256\n    ).hexdigest()\n    return hmac.compare_digest(expected, signature_header)\n```",
-          "keywords": ["webhook signature", "hmac", "sha256", "dub-signature", "security", "verify webhook"]
+          "keywords": [
+            "webhook signature",
+            "hmac",
+            "sha256",
+            "dub-signature",
+            "security",
+            "verify webhook"
+          ]
+        },
+        {
+          "id": "webhook_events",
+          "title": "Supported Webhook Events & Retry Policy",
+          "problem": "Which webhook events does Dub support and what happens if my receiver server is down?",
+          "solution": "### Supported Events:\n• `link.created` — Fired when a new short link is created.\n• `link.updated` — Fired when link destination or settings change.\n• `link.deleted` — Fired when a link is deleted.\n• `link.clicked` — Real-time stream with country, city, device, browser, and referrer.\n\n### Retry Policy:\nIf your server returns anything other than HTTP `2xx`, Dub retries delivery with exponential backoff for up to **3 days**.",
+          "keywords": [
+            "webhooks",
+            "link.created",
+            "link.clicked",
+            "events",
+            "webhook retry",
+            "webhook delivery"
+          ]
+        },
+        {
+          "id": "metatags_scraping_edge_cases",
+          "title": "Metatags Scraping Edge Cases (Cloudflare, SPAs, TikTok, Instagram)",
+          "problem": "Why are metatags, title, and OpenGraph preview images not detected automatically or failing to scrape?",
+          "solution": "### Why Automatic Metatag Scraping Can Fail\n\nDub automatically attempts to fetch OpenGraph and Twitter card metadata from your destination URLs. However, automatic scraping can fail under these conditions:\n\n1. **Cloudflare Bot Management / Captcha:** If the target website blocks automated scrapers, Dub's bot receives a 403 Forbidden or captcha challenge.\n2. **Client-Side SPAs (React/Vue/Vite without SSR):** If the page renders its `<meta>` tags purely through client-side JavaScript, the server-side scraper receives empty HTML.\n3. **Walled Gardens (TikTok, Instagram, LinkedIn):** These platforms strictly require authenticated session cookies to view content.\n\n### The Solution: Explicit Manual Override\nYou do not need to rely on automatic scraping. You can specify exact metadata in the Dub dashboard or via the API:\n\n```json\nPOST https://api.dub.co/links\n{\n  \"url\": \"https://example.com/blocked-page\",\n  \"title\": \"My Custom Viral Post\",\n  \"description\": \"Exclusive sneak peek of our product launch.\",\n  \"image\": \"https://assets.mybrand.com/banner.png\"\n}\n```\nDub will cache and serve these custom metatags directly from its edge network, guaranteeing perfect social cards across Twitter, Slack, and iMessage!",
+          "keywords": [
+            "metatags",
+            "meta tags",
+            "nothing detected",
+            "scrape metatags",
+            "og tags failed",
+            "tiktok preview",
+            "open graph preview",
+            "metatags api"
+          ]
+        },
+        {
+          "id": "qr_code_scannability_and_svg_logos",
+          "title": "QR Code Scanning Issues & SVG Logo Customization",
+          "problem": "Why is my QR code unscannable on mobile cameras or why is the embedded logo missing/blurry in SVG downloads?",
+          "solution": "### Ensuring 100% QR Code Scannability\n\nIf a QR code generated by Dub fails to scan on mobile devices, check these technical requirements:\n\n### 1. Error Correction Level with Logos\nWhen embedding a brand logo in the center of a QR code, the logo physically obscures 15% to 25% of the data grid.\n• You **must** use Error Correction Level `H` (High - 30% recovery rate) when embedding logos.\n• In the API, ensure `level=H` is passed: `GET https://api.dub.co/qr?url=...&logo=...&level=H`.\n\n### 2. Foreground / Background Contrast Ratio\n• QR code scanners require high optical contrast.\n• Always use dark foreground colors (`fgColor=#000000` or `#1E293B`) on a pure white background (`bgColor=#FFFFFF`).\n• Avoid yellow, pastel, or low-contrast colors on light backgrounds.\n\n### 3. SVG vs PNG Logo Downloads\n• When downloading as SVG, ensure your logo is a public, CORS-enabled HTTPS URL.\n• If downloading for print billboards or high-dpi packaging, request high resolution: `size=1024`.",
+          "keywords": [
+            "qr code scan",
+            "unable to scan qr",
+            "qr logo",
+            "qr error correction",
+            "qr contrast",
+            "qr svg",
+            "unscannable",
+            "qr color",
+            "cannot scan",
+            "qr code cannot scan",
+            "not scanning",
+            "scan failure",
+            "qr code scan"
+          ]
+        },
+        {
+          "id": "workspace_roles_and_api_scopes",
+          "title": "Workspace Roles, Team Permissions & Scoped API Keys",
+          "problem": "How do workspace permissions work, and how can I create restricted API keys for developers or CI/CD pipelines?",
+          "solution": "### Workspace Roles & Scoped API Keys\n\nDub provides granular role-based access control (RBAC) to keep workspace resources secure.\n\n### Workspace Team Roles:\n• **Owner:** Full administrative control. Can manage billing, invite/remove members, delete custom domains, and manage all links.\n• **Member:** Can create, edit, archive, and view links and analytics. Cannot alter billing or workspace ownership.\n\n### Scoped API Keys:\nNever use an Owner token in frontend code, client applications, or third-party webhooks. Create restricted API keys in **Settings ➔ API Keys**:\n• `links.write` — Create and update short links.\n• `links.read` — Fetch link metadata and destinations.\n• `analytics.read` — Query clickstream data and stats.\n• `tags.write` — Manage campaign tags.\n\nRestricted tokens prevent accidental workspace deletion or unauthorized domain remapping.",
+          "keywords": [
+            "workspace roles",
+            "permissions",
+            "api scopes",
+            "restricted api key",
+            "team members",
+            "owner vs member",
+            "rbac",
+            "empty scope"
+          ]
+        }
+      ]
+    },
+    {
+      "id": "analytics_and_tracking",
+      "title": "Analytics, Bots & Conversion Tracking",
+      "articles": [
+        {
+          "id": "bot_click_filtering",
+          "title": "Clicks Not Counting or Bot Filtering",
+          "problem": "Why do my link clicks look lower than external server logs or why are clicks filtered?",
+          "solution": "### Intelligent Bot Filtering:\nDub automatically filters out automated scrapers, crawlers, and preview bots (e.g. Twitterbot, Slackbot, LinkedInBot, WhatsApp previews) to guarantee 100% human, accurate analytics.\n\n### Inspecting Bot Clicks:\nIn your Dub Dashboard, toggle **Include Bot Traffic** in the analytics filter bar if you want to inspect raw crawler activity.",
+          "keywords": [
+            "bot clicks",
+            "clicks not counting",
+            "crawlers",
+            "bot filter",
+            "slackbot",
+            "twitterbot",
+            "missing clicks"
+          ]
+        },
+        {
+          "id": "conversion_tracking_pixel",
+          "title": "Setting Up Conversion Tracking & Dub Analytics Pixel",
+          "problem": "How do I track signups and sales generated by short links?",
+          "solution": "### Installing Dub Analytics Script\n\nAdd the script to your `<head>` tag:\n```html\n<script defer src=\"https://dub.co/tag.js\" data-domain=\"yourdomain.com\"></script>\n```\n\n### Tracking a Conversion Event (e.g. Signup or Purchase):\n```javascript\nwindow.dub?.track(\"Purchase\", {\n  amount: 49.00,\n  currency: \"USD\"\n});\n```\nDub uses first-party cookies and privacy-first fingerprinting to tie conversions directly back to the original short link click.",
+          "keywords": [
+            "conversion tracking",
+            "dub pixel",
+            "track conversion",
+            "revenue attribution",
+            "lead tracking",
+            "tag.js"
+          ]
+        },
+        {
+          "id": "analytics_csv_export",
+          "title": "Exporting Click Data & Geographic Analytics to CSV",
+          "problem": "How can I export my analytics, raw click logs, and country/device breakdown to CSV format?",
+          "solution": "### Exporting Analytics Data\n\nDub provides two ways to export your click and attribution data to CSV:\n\n### 1. Direct Dashboard Export:\n1. Navigate to the **Analytics** tab in your Dub Dashboard.\n2. Select your desired date range (e.g. *Last 30 Days*, *Last 12 Months*, or *Custom Range*).\n3. Click the **Export CSV** button in the top right corner.\n4. The CSV will include total clicks, unique visitors, top countries, referrers, devices, and operating systems.\n\n### 2. Programmatic Export via Analytics API:\nQuery the Dub REST API with the `export=csv` parameter:\n\n```bash\ncurl -X GET \"https://api.dub.co/analytics?event=clicks&groupBy=countries&export=csv\" \\\n  -H \"Authorization: Bearer <DUB_API_KEY>\"\n```\nYou can also filter by specific `linkId`, `domain`, or `tagId` to isolate individual marketing campaign datasets.",
+          "keywords": [
+            "export csv",
+            "csv export",
+            "download analytics",
+            "export click data",
+            "analytics report",
+            "download data",
+            "csv format"
+          ]
+        },
+        {
+          "id": "stripe_conversion_tracking",
+          "title": "Stripe Checkout Webhook Integration & Revenue Attribution",
+          "problem": "How do I track actual revenue, Stripe checkout completions, and customer purchases generated by short links?",
+          "solution": "### Connecting Short Links to Stripe Revenue\n\nTo attribute paying customers and MRR back to the exact link or influencer who referred them:\n\n### Step 1: Capture the Dub Click Cookie\nWhen a visitor arrives on your site via a Dub link, the `dub.co/tag.js` tracking script stores a unique click identifier in a first-party cookie named `dub_id`.\n\n### Step 2: Pass `dub_id` into Stripe Checkout Session\nWhen creating your Stripe Checkout session, include the `dub_id` in session metadata:\n```python\nsession = stripe.checkout.Session.create(\n    payment_method_types=['card'],\n    line_items=[...],\n    metadata={\n        'dub_id': request.cookies.get('dub_id')\n    }\n)\n```\n\n### Step 3: Record the Conversion Event\nIn your Stripe webhook handler for `checkout.session.completed`:\n```python\nimport requests\n\nrequests.post(\n    \"https://api.dub.co/track/customer\",\n    headers={\"Authorization\": f\"Bearer {DUB_API_KEY}\"},\n    json={\n        \"customerId\": event['data']['object']['customer'],\n        \"eventName\": \"Purchase\",\n        \"amount\": event['data']['object']['amount_total'] / 100,\n        \"currency\": \"USD\"\n    }\n)\n```\nDub will instantly attribute the sale to the initiating short link in your Analytics dashboard!",
+          "keywords": [
+            "stripe",
+            "revenue attribution",
+            "checkout tracking",
+            "track sales",
+            "stripe webhook",
+            "dub_id",
+            "track customer",
+            "conversion revenue"
+          ]
+        },
+        {
+          "id": "tags_and_campaign_organization",
+          "title": "Campaign Organization via Tags & Multi-Link Filtering",
+          "problem": "How do I organize thousands of short links by marketing campaign, client, or team using tags?",
+          "solution": "### Organizing Links with Tags\n\nTags allow you to group, organize, and analyze links across multiple domains and teams.\n\n### 1. Creating and Assigning Tags\n• **Dashboard:** When creating or editing a link, type in the **Tags** field to select or create a tag (e.g. `black-friday-2026`, `youtube-influencers`, `changelog`).\n• **API:** Pass an array of tag names or IDs:\n  ```json\n  POST https://api.dub.co/links\n  {\n    \"url\": \"https://example.com/promo\",\n    \"tags\": [\"black-friday\", \"newsletter\"]\n  }\n  ```\n\n### 2. Tag-Level Aggregated Analytics\nIn the Dub Analytics tab, filter by any tag to view aggregate metrics:\n• Total clicks across all 50 links in a campaign.\n• Global country and device distribution for that specific channel.\n• Total conversions and revenue attributed to that tag.",
+          "keywords": [
+            "tags",
+            "tagging",
+            "organize links",
+            "campaigns",
+            "tag analytics",
+            "group links",
+            "filter by tag",
+            "campaign tags"
+          ]
+        }
+      ]
+    },
+    {
+      "id": "self_hosting_and_architecture",
+      "title": "Self-Hosting, Docker & Open-Source Architecture",
+      "articles": [
+        {
+          "id": "self_hosting_docker_setup",
+          "title": "Self-Hosting Dub with Docker & Docker Compose",
+          "problem": "How do I self-host Dub on a VPS or Kubernetes cluster using Docker?",
+          "solution": "### Self-Hosting Dub with Docker\n\nDub is 100% open-source under the AGPLv3 license. You can deploy it on your own server or VPS using Docker Compose.\n\n### Minimum System Requirements:\n• 2 CPU Cores, 4GB RAM\n• Linux (Ubuntu 22.04+ recommended)\n• Docker Engine 24.0+ and Docker Compose v2+\n\n### Core Architecture Components:\n1. **Frontend / API:** Next.js application container running on Node.js.\n2. **Database:** PostgreSQL or MySQL database with Prisma schema migrations (`pnpm db:push`).\n3. **Cache & Edge Key-Value:** Redis (Upstash Redis or local Redis instance).\n4. **Click Analytics Engine:** Tinybird clickstream ingestion pipe (or ClickHouse for custom analytical pipelines).\n5. **Storage:** Cloudflare R2 or AWS S3 for QR codes and OG image storage.\n\nRun `git clone https://github.com/dubinc/dub.git`, copy `.env.example` to `.env`, configure the required variables, and run `docker compose up -d`.",
+          "keywords": [
+            "self host",
+            "docker",
+            "self hosting",
+            "docker compose",
+            "vps",
+            "kubernetes",
+            "open source",
+            "deploy dub",
+            "self-host"
+          ]
+        },
+        {
+          "id": "self_hosting_services_prerequisites",
+          "title": "Self-Hosting Required Environment Variables & Services",
+          "problem": "What are the required environment variables and third-party services needed to self-host Dub?",
+          "solution": "### Essential Environment Variables for Self-Hosting\n\nWhen deploying Dub, configure the following keys in your `.env` file:\n\n### 1. Database & Authentication:\n• `DATABASE_URL`: Connection string for PostgreSQL or MySQL (e.g. `postgresql://user:pass@localhost:5432/dub`).\n• `NEXTAUTH_SECRET`: Random 32-character hex secret for session cookie encryption (`openssl rand -base64 32`).\n• `NEXTAUTH_URL`: Your public domain (e.g. `https://dub.yourcompany.com`).\n\n### 2. Redis & Rate Limiting:\n• `UPSTASH_REDIS_REST_URL` & `UPSTASH_REDIS_REST_TOKEN`: Required for edge caching, slug lookup speed, and rate-limiting.\n\n### 3. Analytics & Background Jobs:\n• `TINYBIRD_API_KEY`: Required for real-time click event ingestion and dashboard graphs.\n• `QSTASH_TOKEN`: Upstash QStash for asynchronous webhook delivery and scheduled cron jobs.\n\n### 4. Storage (QR Codes & Favicons):\n• `STORAGE_SECRET_ACCESS_KEY` & `STORAGE_ACCESS_KEY_ID`: Cloudflare R2 or S3 bucket credentials.",
+          "keywords": [
+            "env variables",
+            "self host env",
+            "database_url",
+            "nextauth_secret",
+            "upstash",
+            "tinybird key",
+            "self host prerequisites",
+            "dependencies"
+          ]
+        },
+        {
+          "id": "self_hosting_troubleshooting",
+          "title": "Common Self-Hosting Errors & Build Failures",
+          "problem": "How do I fix common build errors (Prisma, Tinybird pipe errors, or Redis 403 Forbidden) when self-hosting?",
+          "solution": "### Troubleshooting Common Self-Hosting Issues\n\n### 1. Prisma Migration / Database Push Error:\n• **Error:** `DatabaseError: Forbidden` or table mismatch.\n• **Fix:** Run `pnpm db:push` to synchronize the Prisma schema with your database. Ensure your database user has `CREATE`, `ALTER`, and `INDEX` privileges.\n\n### 2. Upstash Redis 403 Forbidden:\n• Verify that `UPSTASH_REDIS_REST_TOKEN` matches your Upstash REST API token (not standard Redis CLI password).\n• Ensure your VPS IP is not firewalled by IP allowlists.\n\n### 3. Tinybird Pipe Ingestion Errors:\n• Make sure the Tinybird workspace was initialized using `tb auth` and the schema was pushed using `tb push`.\n• Dub requires Tinybird pipes `dub_click_events_pipe` and `analytics_pipe` to populate analytics charts.\n\n### 4. Next.js Turbo / Build Memory Limit:\n• Running `pnpm build` in low-memory environments (under 2GB) can trigger `JavaScript heap out of memory`.\n• Set `NODE_OPTIONS=\"--max-old-space-size=4096\"` before running the build command.",
+          "keywords": [
+            "self host error",
+            "unable to build",
+            "prisma error",
+            "tinybird error",
+            "upstash 403",
+            "heap out of memory",
+            "build failed",
+            "pnpm build error"
+          ]
         }
       ]
     }

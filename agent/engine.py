@@ -46,28 +46,54 @@ class DubSupportEngine:
         return None
 
     def search_kb(self, query: str, limit: int = 3) -> List[Dict[str, Any]]:
-        # Scores articles based on matching keywords, title words, and problem description
-        q_lower = query.lower()
+        # Normalize common typos and abbreviations
+        q_norm = query.lower()
+        replacements = {
+            "shortning": "shortening",
+            "agter": "after",
+            "faling": "failing",
+            "redir": "redirect",
+            "cant": "can not",
+            "isnt": "is not",
+        }
+        for wrong, right in replacements.items():
+            q_norm = q_norm.replace(wrong, right)
+
         scored = []
+        is_troubleshooting_query = any(w in q_norm for w in ["not working", "broken", "failed", "failing", "error", "404", "500", "525", "down", "issue"])
 
         for art in self.articles:
             score = 0
-            # Exact keyword match gives the highest score
+            art_title_lower = art.get("title", "").lower()
+            art_prob_lower = art.get("problem", "").lower()
+
+            # 1. Exact phrase keyword matching
             for kw in art.get("keywords", []):
-                if kw in q_lower:
-                    score += 5
-            # Matching words in title
-            for word in art.get("title", "").lower().split():
-                if len(word) > 3 and word in q_lower:
+                if kw in q_norm:
+                    # Multi-word phrase matches are strong intent indicators
+                    score += 8 if " " in kw else 4
+
+            # 2. Matching title words
+            for word in art_title_lower.split():
+                if len(word) > 3 and word in q_norm:
                     score += 3
-            # Matching words in problem description
-            if any(w in q_lower for w in art.get("problem", "").lower().split() if len(w) > 4):
-                score += 2
+
+            # 3. Matching problem description
+            for word in art_prob_lower.split():
+                if len(word) > 4 and word in q_norm:
+                    score += 2
+
+            # 4. Intent alignment: penalize tutorial/creation articles if query is an error/broken link report
+            if is_troubleshooting_query:
+                if "create" in art_title_lower or "api & sdk" in art_title_lower:
+                    score -= 8
+                if "troubleshooting" in art_title_lower or "failing" in art_title_lower or "error" in art_title_lower:
+                    score += 10
 
             if score > 0:
                 scored.append((score, art))
 
-        # Sort highest score first and return the top matches
+        # Sort highest score first and return top matches
         scored.sort(key=lambda x: x[0], reverse=True)
         return [item[1] for item in scored[:limit]]
 
