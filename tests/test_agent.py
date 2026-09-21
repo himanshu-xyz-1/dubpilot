@@ -156,3 +156,32 @@ def test_security_and_scope_guardrails():
     assert "Security Guardrail Notice" in r_jailbreak["solution_markdown"]
 
 
+def test_state_manipulator_and_ollama_fallback(client):
+    # Test that simulating Groq failure causes immediate and seamless failover to local Ollama
+    engine = DubSupportEngine()
+
+    # 1. Verify API endpoint to simulate failure
+    res_sim = client.post("/api/dev/simulate", json={"simulate_groq_failure": True})
+    assert res_sim.status_code == 200
+    assert res_sim.json()["state"]["simulate_groq_failure"] is True
+    assert "ollama" in res_sim.json()["state"]["active_provider"]
+
+    # 2. Test that engine resolves via Ollama fallback
+    engine.llm.set_simulation_state(groq_failure=True)
+    assert "ollama" in engine.llm.get_active_provider()
+    res_ticket = engine.resolve_ticket("How do I configure my apex domain mycompany.com?")
+    assert "ollama" in res_ticket["engine_used"]
+    assert "76.76.21.21" in res_ticket["solution_markdown"]
+
+    # 3. Restore Groq via state manipulator
+    res_restore = client.post("/api/dev/simulate", json={"simulate_groq_failure": False})
+    assert res_restore.status_code == 200
+    assert res_restore.json()["state"]["simulate_groq_failure"] is False
+    assert "groq" in res_restore.json()["state"]["active_provider"]
+
+    # 4. Engine now uses Groq
+    engine.llm.set_simulation_state(groq_failure=False)
+    assert "groq" in engine.llm.get_active_provider()
+
+
+

@@ -233,6 +233,7 @@ class UnifiedLLM:
     1. Uses Groq Cloud (500+ tokens/sec, 120B model) when GROQ_API_KEY is present.
     2. Falls back to local Ollama (LLaMA 3.2) when offline or key is missing.
     3. Manages conversational memory across turns.
+    4. Includes State Manipulator for chaos testing and fallback verification.
     """
 
     def __init__(self):
@@ -241,10 +242,34 @@ class UnifiedLLM:
         self.ollama = OllamaLLM()
         self.memory = SessionMemory()
 
+        # State Manipulator simulation flags
+        self.simulate_groq_failure: bool = False
+        self.simulate_ollama_failure: bool = False
+
+    def set_simulation_state(self, groq_failure: Optional[bool] = None, ollama_failure: Optional[bool] = None):
+        """Allows testing fallback by deliberately simulating API or local model outages."""
+        if groq_failure is not None:
+            self.simulate_groq_failure = groq_failure
+            logger.info(f"[STATE MANIPULATOR] Groq failure simulation set to: {groq_failure}")
+        if ollama_failure is not None:
+            self.simulate_ollama_failure = ollama_failure
+            logger.info(f"[STATE MANIPULATOR] Ollama failure simulation set to: {ollama_failure}")
+
+    def get_simulation_state(self) -> Dict[str, any]:
+        """Returns the active provider and simulation flags."""
+        return {
+            "simulate_groq_failure": self.simulate_groq_failure,
+            "simulate_ollama_failure": self.simulate_ollama_failure,
+            "active_provider": self.get_active_provider(),
+            "active_model": self.get_model_name(),
+            "groq_configured": bool(self.groq and self.groq.is_available()),
+            "ollama_online": self.ollama.is_available(),
+        }
+
     def get_active_provider(self):
-        if self.groq and self.groq.is_available():
+        if not self.simulate_groq_failure and self.groq and self.groq.is_available():
             return "groq"
-        if self.ollama and self.ollama.is_available():
+        if not self.simulate_ollama_failure and self.ollama and self.ollama.is_available():
             return "ollama"
         return "none"
 
@@ -253,21 +278,23 @@ class UnifiedLLM:
         if provider == "groq":
             return f"groq ({self.groq.model})"
         if provider == "ollama":
-            return f"ollama ({self.ollama.model})"
+            suffix = " [FALLBACK]" if self.simulate_groq_failure else ""
+            return f"ollama ({self.ollama.model}){suffix}"
         return "deterministic_kb"
 
     def is_available(self) -> bool:
         return self.get_active_provider() != "none"
 
     def generate(self, messages: List[Dict[str, str]], system_prompt: str = "") -> Optional[str]:
-        # Try Groq first
-        if self.groq and self.groq.is_available():
+        # 1. Try Groq if not simulated as failed
+        if not self.simulate_groq_failure and self.groq and self.groq.is_available():
             ans = self.groq.generate(messages, system_prompt=system_prompt)
             if ans:
                 return ans
+            logger.warning("[FALLBACK TRIGGERED] Groq returned empty, routing to Ollama...")
 
-        # Fallback to local Ollama
-        if self.ollama and self.ollama.is_available():
+        # 2. Fallback to local Ollama if not simulated as failed
+        if not self.simulate_ollama_failure and self.ollama and self.ollama.is_available():
             return self.ollama.generate(messages, system_prompt=system_prompt)
 
         return None
@@ -275,16 +302,17 @@ class UnifiedLLM:
     async def stream_chat(
         self, messages: List[Dict[str, str]], system_prompt: str = ""
     ) -> AsyncIterator[str]:
-        # Stream from Groq first
-        if self.groq and self.groq.is_available():
+        # 1. Stream from Groq if not simulated as failed
+        if not self.simulate_groq_failure and self.groq and self.groq.is_available():
             success = False
             async for token in self.groq.stream_chat(messages, system_prompt=system_prompt):
                 success = True
                 yield token
             if success:
                 return
+            logger.warning("[FALLBACK TRIGGERED] Groq stream failed, routing to Ollama...")
 
-        # Fallback to local Ollama
-        if self.ollama and self.ollama.is_available():
+        # 2. Fallback to local Ollama if not simulated as failed
+        if not self.simulate_ollama_failure and self.ollama and self.ollama.is_available():
             async for token in self.ollama.stream_chat(messages, system_prompt=system_prompt):
                 yield token

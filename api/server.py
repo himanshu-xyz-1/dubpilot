@@ -52,6 +52,13 @@ class WebhookVerifyRequest(BaseModel):
 WebhookVerifyRequest.model_rebuild()
 
 
+class SimulationStateRequest(BaseModel):
+    simulate_groq_failure: Optional[bool] = Field(None, description="Set to True to simulate Groq API outage.")
+    simulate_ollama_failure: Optional[bool] = Field(None, description="Set to True to simulate local Ollama outage.")
+
+SimulationStateRequest.model_rebuild()
+
+
 @app.get("/health")
 def health_check():
     """Simple health check endpoint returning service status and LLM availability."""
@@ -62,6 +69,30 @@ def health_check():
         "knowledge_articles_loaded": len(engine.articles),
         "llm_engine": engine.llm.get_model_name(),
         "llm_online": engine.llm.is_available(),
+        "simulation_state": engine.llm.get_simulation_state(),
+    }
+
+
+@app.get("/api/dev/state")
+def get_simulation_state():
+    """Returns the current state of LLM providers and active simulation overrides."""
+    return engine.llm.get_simulation_state()
+
+
+@app.post("/api/dev/simulate")
+def set_simulation_state(req: SimulationStateRequest):
+    """
+    State Manipulator:
+    Allows developers to simulate Groq API failures or Ollama failures
+    to verify real-time fallback behavior.
+    """
+    engine.llm.set_simulation_state(
+        groq_failure=req.simulate_groq_failure,
+        ollama_failure=req.simulate_ollama_failure
+    )
+    return {
+        "message": "Simulation state updated successfully",
+        "state": engine.llm.get_simulation_state()
     }
 
 
