@@ -78,3 +78,23 @@ def test_api_endpoints(client):
     r_ui = client.get("/")
     assert r_ui.status_code == 200
     assert "DubPilot" in r_ui.text
+
+    # 5. DNS Endpoint
+    r_dns = client.get("/api/dns?domain=google.com")
+    assert r_dns.status_code == 200
+    assert "resolved_ips" in r_dns.json()
+
+    # 6. SSL Endpoint
+    r_ssl = client.get("/api/ssl?domain=google.com")
+    assert r_ssl.status_code == 200
+    assert "ssl_active" in r_ssl.json()
+
+    # 7. Webhook Verification Endpoint
+    wh_payload = {
+        "payload": '{"id":"evt_999","event":"link.clicked"}',
+        "signature": "mock_invalid_sig",
+        "secret": "whsec_test",
+    }
+    r_wh = client.post("/api/verify-webhook", json=wh_payload)
+    assert r_wh.status_code == 200
+    assert r_wh.json()["verified"] is False

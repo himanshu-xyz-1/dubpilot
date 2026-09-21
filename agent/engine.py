@@ -11,7 +11,7 @@ import os
 import re
 from typing import Dict, List, Any, Optional
 
-from agent.tools import check_domain_dns, check_domain_ssl, verify_webhook_hmac
+from agent.tools import check_domain_dns, check_domain_ssl
 
 
 class DubSupportEngine:
@@ -84,6 +84,8 @@ class DubSupportEngine:
 
         if detected_domain and any(k in clean_query.lower() for k in ["domain", "cname", "dns", "ssl", "not working", "setup", "link"]):
             dns_diag = check_domain_dns(detected_domain)
+            if any(s in clean_query.lower() for s in ["ssl", "525", "cert", "https"]):
+                dns_diag["ssl_info"] = check_domain_ssl(detected_domain)
 
         # Retrieve relevant KB articles
         kb_matches = self.search_kb(clean_query)
@@ -94,13 +96,18 @@ class DubSupportEngine:
         # 1. Real-time Live DNS Diagnostic Box (if domain present)
         if dns_diag:
             status_emoji = "✅" if dns_diag["status"] == "CORRECT" else "⚠️"
-            response_sections.append(
-                f"### {status_emoji} Real-Time DNS Telemetry for `{dns_diag['domain']}`\n\n"
-                f"• **Current Resolved IPs:** `{', '.join(dns_diag['resolved_ips']) if dns_diag['resolved_ips'] else 'None (Unresolved)'}`\n"
-                f"• **Expected Target:** `{dns_diag['expected_target']}`\n"
-                f"• **Live Diagnosis:** {dns_diag['diagnosis']}\n"
-                f"• **Action Required:** {dns_diag['action_required']}\n"
-            )
+            telemetry_lines = [
+                f"### {status_emoji} Real-Time DNS Telemetry for `{dns_diag['domain']}`\n",
+                f"• **Current Resolved IPs:** `{', '.join(dns_diag['resolved_ips']) if dns_diag['resolved_ips'] else 'None (Unresolved)'}`",
+                f"• **Expected Target:** `{dns_diag['expected_target']}`",
+            ]
+            if "ssl_info" in dns_diag:
+                ssl_data = dns_diag["ssl_info"]
+                ssl_desc = f"✓ Valid TLS Handshake (Issuer: {ssl_data.get('issuer') or 'Active'})" if ssl_data.get("ssl_active") else f"✗ TLS Handshake Error ({ssl_data.get('error') or 'Unreachable'})"
+                telemetry_lines.append(f"• **Port 443 SSL Probe:** `{ssl_desc}`")
+            telemetry_lines.append(f"• **Live Diagnosis:** {dns_diag['diagnosis']}")
+            telemetry_lines.append(f"• **Action Required:** {dns_diag['action_required']}\n")
+            response_sections.append("\n".join(telemetry_lines))
 
         # 2. Knowledge Base Article Solution
         if kb_matches:
