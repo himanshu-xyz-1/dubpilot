@@ -2,7 +2,6 @@
 # and local Ollama LLaMA models with multi-turn session memory and async streaming.
 
 from __future__ import annotations
-import asyncio
 import json
 import logging
 import os

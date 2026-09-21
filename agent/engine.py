@@ -4,7 +4,7 @@ from __future__ import annotations
 import json
 import os
 import re
-from typing import Dict, List, Any, Optional
+from typing import Any, AsyncIterator, Dict, List, Optional
 
 from agent.tools import check_domain_dns, check_domain_ssl
 from agent.llm import UnifiedLLM
@@ -267,7 +267,7 @@ class DubSupportEngine:
             )
             if len(kb_matches) > 1:
                 response_sections.append(
-                    f"**Related Topics:**\n" +
+                    "**Related Topics:**\n" +
                     "\n".join([f"• *{a['title']}*" for a in kb_matches[1:]]) + "\n"
                 )
         else:

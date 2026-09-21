@@ -1,11 +1,13 @@
 # Tests for DubPilot to make sure everything works properly before deploying.
 
+import hashlib
+import hmac
 import pytest
 from fastapi.testclient import TestClient
 
-from api.server import app
 from agent.engine import DubSupportEngine
 from agent.tools import check_domain_dns, verify_webhook_hmac
+from api.server import app
 
 
 @pytest.fixture
@@ -18,7 +20,7 @@ def test_knowledge_base_loading():
     # Make sure our knowledge base loads all help articles from the JSON file
     engine = DubSupportEngine()
     assert len(engine.articles) >= 15
-    categories = set(a.get("category") for a in engine.articles)
+    categories = {a.get("category") for a in engine.articles}
     assert any("Custom Domains" in c for c in categories)
 
 
@@ -34,7 +36,6 @@ def test_webhook_hmac_verification():
     # Test that valid webhook signatures return True and fake ones return False
     secret = "whsec_test12345"
     payload = '{"id":"evt_123","event":"link.clicked"}'
-    import hmac, hashlib
     valid_sig = hmac.new(secret.encode(), payload.encode(), hashlib.sha256).hexdigest()
 
     assert verify_webhook_hmac(payload, valid_sig, secret) is True

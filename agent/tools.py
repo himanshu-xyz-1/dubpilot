@@ -5,7 +5,7 @@ import hashlib
 import hmac
 import socket
 import ssl
-from typing import Any, Dict, List, Optional
+from typing import Any, Dict
 
 
 def check_domain_dns(domain: str) -> Dict[str, Any]:

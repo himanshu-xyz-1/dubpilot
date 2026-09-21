@@ -1,14 +1,13 @@
 # FastAPI backend server that handles API requests, live DNS/SSL checks, and token streaming.
 
 from __future__ import annotations
-import asyncio
 import json
 import os
 import sys
 from typing import Optional
 from fastapi import FastAPI, HTTPException
 from fastapi.middleware.cors import CORSMiddleware
-from fastapi.responses import HTMLResponse, JSONResponse, StreamingResponse
+from fastapi.responses import HTMLResponse, StreamingResponse
 from pydantic import BaseModel, Field
 
 # Make sure we can import from our agent folder
