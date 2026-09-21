@@ -235,7 +235,6 @@ dub-ai-agent/
 │   └── index.html            # Signature Dub light-mode client with SSE streaming
 ├── tests/
 │   └── test_agent.py         # Pytest verification suite (100% passing)
-├── PITCH_TO_STEVEN.md        # Cold email, Twitter DM, and 60-sec Loom script for Steven Tey
 ├── run.py                    # Server entrypoint launcher
 ├── requirements.txt          # Production dependencies
 └── README.md                 # Complete technical documentation
@@ -258,7 +257,6 @@ Engineered by **Himanshu Joshi** ([@himanshu-xyz-1](https://github.com/himanshu-
 Built as a demonstration of high-velocity Applied AI engineering and internal tooling automation for high-scale, developer-focused startups.
 
 - **GitHub:** [https://github.com/himanshu-xyz-1](https://github.com/himanshu-xyz-1)
-- **Target Outreach:** [Steven Tey (CEO @ Dub.co)](PITCH_TO_STEVEN.md)
 
 ---
 
