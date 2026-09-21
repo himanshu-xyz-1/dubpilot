@@ -5,10 +5,12 @@
 
 [![FastAPI](https://img.shields.io/badge/FastAPI-0.110+-009688.svg)](https://fastapi.tiangolo.com/)
 [![Python 3.10+](https://img.shields.io/badge/Python-3.10+-3776AB.svg)](https://www.python.org/downloads/)
+[![LLM: Groq 120B](https://img.shields.io/badge/LLM-Groq%20Cloud%20120B-orange.svg)](https://groq.com/)
+[![Fallback: Ollama LLaMA 3.2](https://img.shields.io/badge/Fallback-Local%20Ollama%203.2-blue.svg)](https://ollama.ai/)
+[![Chaos Testing](https://img.shields.io/badge/Resilience-State%20Manipulator-purple.svg)]()
 [![Streaming: SSE](https://img.shields.io/badge/Streaming-Server--Sent%20Events-FF6F00.svg)]()
 [![Live DNS Telemetry](https://img.shields.io/badge/Live%20Telemetry-Socket%20Level-blue.svg)]()
-[![Tailwind CSS 3.4](https://img.shields.io/badge/UI-Tailwind%20CSS-38B2AC.svg)](https://tailwindcss.com/)
-[![Tests Passing](https://img.shields.io/badge/tests-6%2F6%20passing-brightgreen.svg)]()
+[![Tests Passing](https://img.shields.io/badge/tests-10%2F10%20passing-brightgreen.svg)]()
 [![License: MIT](https://img.shields.io/badge/License-MIT-yellow.svg)](LICENSE)
 
 ---
