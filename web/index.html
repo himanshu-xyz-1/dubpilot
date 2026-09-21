@@ -3,7 +3,7 @@
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>Dub.co AI Support Co-Pilot</title>
+  <title>DubPilot • AI Support & Live DNS Engine for Dub.co</title>
   <script src="https://cdn.tailwindcss.com"></script>
   <script src="https://cdn.jsdelivr.net/npm/marked/marked.min.js"></script>
   <link rel="preconnect" href="https://fonts.googleapis.com">
@@ -83,12 +83,12 @@
       <!-- Brand Logo -->
       <div class="flex items-center space-x-6">
         <a href="/" class="flex items-center space-x-2.5 group">
-          <div class="w-8 h-8 rounded-lg border-2 border-black flex items-center justify-center font-extrabold text-sm tracking-tighter text-black transition group-hover:bg-black group-hover:text-white">
-            dub
+          <div class="w-8 h-8 rounded-lg bg-black text-white flex items-center justify-center font-extrabold text-xs tracking-tight shadow-sm transition group-hover:scale-105">
+            DP
           </div>
           <span class="font-bold text-base tracking-tight text-black flex items-center gap-1.5">
-            Support Co-Pilot
-            <span class="text-[10px] uppercase font-bold tracking-wider px-2 py-0.5 rounded-full bg-zinc-100 text-zinc-700 border border-zinc-300/80">AI Agent</span>
+            DubPilot
+            <span class="text-[10px] uppercase font-bold tracking-wider px-2 py-0.5 rounded-full bg-zinc-100 text-zinc-700 border border-zinc-300/80">for Dub.co</span>
           </span>
         </a>
       </div>
@@ -111,18 +111,18 @@
   <!-- Hero Section -->
   <section class="max-w-4xl w-full text-center pt-10 pb-6 px-4">
     <!-- Announcement Pill -->
-    <div class="inline-flex items-center gap-2 px-3 py-1 rounded-full border border-zinc-200 bg-white/80 backdrop-blur-xs text-xs font-medium text-zinc-700 shadow-xs mb-5">
-      <span class="font-semibold text-black">Autonomous L1/L2 Resolution</span>
+    <div class="inline-flex items-center gap-2 px-3.5 py-1 rounded-full border border-zinc-200 bg-white/80 backdrop-blur-xs text-xs font-medium text-zinc-700 shadow-xs mb-5">
+      <span class="font-semibold text-black">DubPilot AI</span>
       <span class="text-zinc-300">•</span>
-      <span>Live DNS & Socket Telemetry ↗</span>
+      <span>Autonomous DNS & Support Copilot for Dub.co ↗</span>
     </div>
 
     <!-- Main Headline -->
     <h1 class="text-4xl sm:text-5xl font-extrabold text-black tracking-tight leading-tight mb-3">
-      Turn support tickets into instant fixes
+      Turn link support tickets into instant fixes
     </h1>
     <p class="text-base sm:text-lg text-zinc-600 max-w-2xl mx-auto leading-relaxed mb-6 font-normal">
-      Dub is the modern link attribution platform. This AI co-pilot automatically inspects custom domain DNS, diagnoses Cloudflare 525 errors, and solves developer API bottlenecks.
+      DubPilot is the autonomous developer support engine tailored for Dub.co. It runs live DNS socket telemetry, diagnoses Cloudflare 525 errors, and troubleshoots API bottlenecks in real time.
     </p>
 
     <!-- Preset Category Pills (Dub Feature Selector Style) -->
@@ -169,10 +169,10 @@
         <!-- Welcome Message -->
         <div class="flex items-start space-x-3.5">
           <div class="w-8 h-8 rounded-lg bg-black text-white flex items-center justify-center font-bold text-xs shrink-0 mt-0.5 shadow-sm">
-            dub
+            DP
           </div>
           <div class="bg-zinc-50 border border-zinc-200/90 rounded-2xl rounded-tl-xs p-4 text-sm text-zinc-800 max-w-[88%] shadow-xs leading-relaxed">
-            <p class="font-bold text-black mb-1.5 text-sm">Welcome to the Dub.co AI Support Co-Pilot.</p>
+            <p class="font-bold text-black mb-1.5 text-sm">Welcome to DubPilot for Dub.co.</p>
             <p class="text-zinc-600">I can diagnose live DNS configurations for custom domains, troubleshoot Cloudflare 525 SSL handshakes, calculate API rate limit backoffs, and verify webhook signatures. Ask a question or type your domain below to run live telemetry.</p>
           </div>
         </div>
@@ -199,7 +199,7 @@
           </button>
         </form>
         <div class="flex items-center justify-between mt-2.5 px-1 text-[11px] text-zinc-400 font-medium">
-          <span>Engineered by Himanshu Joshi for Dub Technologies, Inc.</span>
+          <span>DubPilot • Engineered by Himanshu Joshi for Dub.co</span>
           <span>Targeting Anycast: <code>76.76.21.21</code> & <code>cname.dub.co</code></span>
         </div>
       </div>
@@ -219,7 +219,7 @@
 
       const avatar = document.createElement("div");
       avatar.className = `w-8 h-8 rounded-lg flex items-center justify-center font-bold text-xs shrink-0 mt-0.5 shadow-sm ${isUser ? 'bg-zinc-800 text-white order-2 ml-3' : 'bg-black text-white'}`;
-      avatar.innerText = isUser ? "YOU" : "dub";
+      avatar.innerText = isUser ? "YOU" : "DP";
 
       const bubble = document.createElement("div");
       bubble.className = isUser 
@@ -258,8 +258,8 @@
       const wrapper = document.createElement("div");
       wrapper.className = "flex items-start space-x-3.5";
       const avatar = document.createElement("div");
-      avatar.className = "w-8 h-8 rounded-lg flex items-center justify-center text-xs font-bold text-white shrink-0 mt-0.5 bg-black shadow-sm";
-      avatar.innerText = "dub";
+      avatar.className = "w-8 h-8 rounded-lg flex items-center justify-center font-bold text-xs shrink-0 mt-0.5 bg-black shadow-sm";
+      avatar.innerText = "DP";
 
       const bubble = document.createElement("div");
       bubble.className = "bg-zinc-50 border border-zinc-200/90 rounded-2xl rounded-tl-xs p-5 text-sm text-zinc-800 max-w-[90%] leading-relaxed shadow-xs markdown-body";

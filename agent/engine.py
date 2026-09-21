@@ -119,7 +119,7 @@ class DubSupportEngine:
             # Fallback for general greetings or unrecognized queries
             if any(w in clean_query.lower() for w in ["hi", "hello", "hey"]):
                 response_sections.append(
-                    "Hello! I am the **Dub.co Support AI Assistant**. I can help you with:\n"
+                    "Hello! I am **DubPilot**, your autonomous technical support co-pilot for Dub.co. I can help you with:\n"
                     "• Custom Domain DNS setup (Apex A record or Subdomain CNAME)\n"
                     "• Cloudflare SSL 525 & ERR_SSL_PROTOCOL_ERROR fixes\n"
                     "• API rate limits, 429 backoff & SDK link creation\n"

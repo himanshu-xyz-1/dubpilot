@@ -12,7 +12,7 @@ sys.path.insert(0, os.path.abspath(os.path.dirname(__file__)))
 if __name__ == "__main__":
     port = int(os.environ.get("PORT", 8080))
     print("=" * 65)
-    print("🚀 DUB.CO AI SUPPORT CO-PILOT IS ONLINE")
+    print("🚀 DUBPILOT IS ONLINE (Autonomous Support Engine for Dub.co)")
     print("=" * 65)
     print(f"• Local Web UI: http://localhost:{port}")
     print(f"• API Docs:     http://localhost:{port}/docs")

@@ -1,6 +1,6 @@
-# ⚡ Dub.co AI Customer Support & Autonomous DNS Triage Co-Pilot
+# ⚡ DubPilot: Autonomous Support & Live DNS Diagnostic Co-Pilot for Dub.co
 
-> **Autonomous L1/L2 Technical Support Agent & Live DNS Diagnostic Engine built specifically for Dub.co.**  
+> **Autonomous L1/L2 Technical Support Agent & Live DNS Diagnostic Engine tailored for Dub.co.**  
 > Designed and engineered by **Himanshu Joshi (`himanshu-xyz-1`)**.
 
 [![FastAPI](https://img.shields.io/badge/FastAPI-0.110+-009688.svg)](https://fastapi.tiangolo.com/)
@@ -18,10 +18,11 @@ At **Dub.co**, an ultra-lean team (<15 people) powers hundreds of millions of li
 - **API & Rate Limits:** Developers hitting 429 Too Many Requests without knowing how to read `Retry-After` headers or use bulk link creation.
 - **Webhook Security:** Implementing and debugging HMAC SHA-256 signature verification.
 
-### 💡 What This Agent Does:
+### 💡 What DubPilot Does:
 1. **Live DNS Telemetry Tool:** Directly resolves the user's domain in real-time, determines whether it's an Apex or Subdomain, detects Cloudflare proxying, and gives the exact, copy-paste DNS record fix.
 2. **Deterministic RAG Knowledge Engine:** Pre-indexed with official Dub.co error resolution playbooks.
-3. **Interactive Dark-Mode UI:** Built with a clean aesthetic matching Dub.co's exact design language.
+3. **Real-Time Token Streaming (SSE):** Streams technical guidance and remediation steps word-by-word via Server-Sent Events with animated blinking cursor.
+4. **Signature Dub.co Light-Mode UI:** Built with pure white canvas (`#ffffff`), faint 48px grid lines, crisp typography, and pitch-black accents.
 
 ---
 
@@ -80,7 +81,7 @@ dub-ai-agent/
 ├── data/
 │   └── dub_knowledge_base.json # Official Dub troubleshooting playbooks
 ├── web/
-│   └── index.html            # Dark-mode Tailwind client
+│   └── index.html            # Signature Dub-styled light-mode client with SSE streaming
 ├── tests/
 │   └── test_agent.py         # Pytest verification suite (100% passing)
 ├── PITCH_TO_STEVEN.md        # Cold email, Twitter DM, and 60-sec Loom script

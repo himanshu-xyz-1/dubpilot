@@ -77,4 +77,4 @@ def test_api_endpoints(client):
     # 4. Web UI
     r_ui = client.get("/")
     assert r_ui.status_code == 200
-    assert "Dub.co Support Co-Pilot" in r_ui.text
+    assert "DubPilot" in r_ui.text

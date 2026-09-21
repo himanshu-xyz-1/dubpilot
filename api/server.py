@@ -19,7 +19,7 @@ from agent.engine import DubSupportEngine
 from agent.tools import check_domain_dns, check_domain_ssl
 
 app = FastAPI(
-    title="Dub.co AI Customer Support Platform",
+    title="DubPilot • AI Support Platform for Dub.co",
     description="Autonomous customer support and real-time DNS troubleshooting agent for Dub.co",
     version="1.0.0",
 )
