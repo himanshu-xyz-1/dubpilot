@@ -12,6 +12,7 @@
 [![Streaming: SSE](https://img.shields.io/badge/Streaming-Server--Sent%20Events-FF6F00.svg)]()
 [![Live DNS Telemetry](https://img.shields.io/badge/Live%20Telemetry-Socket%20Level-blue.svg)]()
 [![Tests Passing](https://img.shields.io/badge/tests-10%2F10%20passing-brightgreen.svg)]()
+[![Docker](https://img.shields.io/badge/Docker-Ready-2496ED.svg?logo=docker&logoColor=white)]()
 [![License: MIT](https://img.shields.io/badge/License-MIT-yellow.svg)](LICENSE)
 
 ---
@@ -194,9 +195,23 @@ PYTHONPATH=. pytest tests/ -v
 **Test Results:** `10/10 passed (100% test coverage across knowledge base, DNS resolver, SSL probe, HMAC verification, real GitHub playbooks, security guardrails, and chaos state manipulator)`.
 
 ### 5. Launch DubPilot Server
+
+#### Option A: Native Python
 ```bash
 python run.py
 ```
+
+#### Option B: 1-Click via Docker Compose
+```bash
+docker compose up -d
+```
+
+#### Option C: Standalone Docker Run
+```bash
+docker build -t dubpilot:latest .
+docker run -d -p 8080:8080 --name dubpilot-app dubpilot:latest
+```
+
 Output:
 ```text
 ============================================================
@@ -281,6 +296,10 @@ dubpilot/
 ├── tests/
 │   └── test_agent.py         # 10/10 Pytest verification suite
 ├── run.py                    # Server entrypoint launcher
+├── Dockerfile                # Production non-root multi-stage container build
+├── docker-compose.yml        # 1-click execution & host Ollama network bridge
+├── .dockerignore             # Optimized build context filtering
+├── requirements.txt          # Production dependencies
 ├── .gitignore                # Protects environment keys (.env) and Python artifacts
 └── README.md                 # Complete technical documentation
 ```

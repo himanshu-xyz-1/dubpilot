@@ -1,0 +1,18 @@
+version: "3.8"
+
+services:
+  dubpilot:
+    build:
+      context: .
+      dockerfile: Dockerfile
+    container_name: dubpilot
+    ports:
+      - "8080:8080"
+    environment:
+      - PORT=8080
+      - GROQ_API_KEY=${GROQ_API_KEY:-}
+      - OLLAMA_BASE_URL=${OLLAMA_BASE_URL:-http://host.docker.internal:11434}
+    extra_hosts:
+      # Allows the Docker container to seamlessly communicate with Ollama on the host machine
+      - "host.docker.internal:host-gateway"
+    restart: unless-stopped

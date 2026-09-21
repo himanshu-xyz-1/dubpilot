@@ -1,0 +1,11 @@
+__pycache__
+*.py[cod]
+*$py.class
+.venv
+.pytest_cache
+.git
+.gitignore
+.env
+build_guide_pdf.py
+*.pdf
+*.log
