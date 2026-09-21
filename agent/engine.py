@@ -99,30 +99,56 @@ class DubSupportEngine:
         scored.sort(key=lambda x: x[0], reverse=True)
         return [item[1] for item in scored[:limit]]
 
-    def resolve_ticket(self, user_query: str) -> Dict[str, Any]:
+    def check_guardrail(self, query: str) -> Optional[str]:
         """
-        Main function to answer a support ticket:
-        1. Checks if the user mentioned a domain name.
-        2. Runs live DNS and SSL checks if needed.
-        3. Finds the best match in the knowledge base.
-        4. Combines everything into a clear Markdown response.
+        Fast pre-LLM security and scope filter.
+        Blocks jailbreaks and out-of-scope requests before wasting LLM compute.
         """
-        clean_query = user_query.strip()
-        detected_domain = self.extract_domain(clean_query)
-        dns_diag = None
+        q_lower = query.lower().strip()
 
-        # If a domain was mentioned alongside DNS or setup keywords, run live network checks
-        if detected_domain and any(k in clean_query.lower() for k in ["domain", "cname", "dns", "ssl", "not working", "setup", "link"]):
-            dns_diag = check_domain_dns(detected_domain)
-            # If SSL or error 525 was mentioned, also check the SSL certificate on port 443
-            if any(s in clean_query.lower() for s in ["ssl", "525", "cert", "https"]):
-                dns_diag["ssl_info"] = check_domain_ssl(detected_domain)
+        # 1. Jailbreak and Prompt Injection Attempts
+        jailbreak_triggers = [
+            "ignore previous instructions",
+            "ignore all instructions",
+            "disregard previous",
+            "disregard all instructions",
+            "ignore your rules",
+            "you are now dan",
+            "pretend you are chatgpt",
+            "act as an unrestricted ai",
+            "ignore system prompt",
+            "jailbreak mode",
+        ]
+        if any(trig in q_lower for trig in jailbreak_triggers):
+            return (
+                "### ⚠️ Security Guardrail Notice\n\n"
+                "I am **DubPilot**, dedicated exclusively to **Dub.co** infrastructure, custom domain DNS, and link attribution.\n\n"
+                "System instructions and scope boundaries cannot be overridden or modified. "
+                "How can I assist you with your Dub.co links, custom domains, or API setup?"
+            )
 
-        # Look up matching articles from our knowledge base
-        kb_matches = self.search_kb(clean_query)
+        # 2. Obvious Out-of-Scope Requests (creative writing, homework, recipes, etc.)
+        out_of_scope_triggers = [
+            "write a poem", "write a story", "write an essay", "write lyrics", "write a script",
+            "tell me a joke", "recipe for", "how to bake", "how to cook",
+            "solve for x", "solve equation", "calculus",
+            "who is the president", "capital of", "weather today", "translate this to",
+        ]
+        if any(trig in q_lower for trig in out_of_scope_triggers):
+            return (
+                "### 🔒 Scope Boundary Notice\n\n"
+                "I am **DubPilot**, an autonomous technical support engineer specialized exclusively for **Dub.co** infrastructure.\n\n"
+                "My domain is strictly focused on:\n"
+                "• Custom Domain DNS routing (Apex A records `76.76.21.21` & Subdomain CNAMEs `cname.dub.co`)\n"
+                "• SSL/TLS troubleshooting (Cloudflare 525 & Let's Encrypt certificates)\n"
+                "• Dub REST APIs, Python/TypeScript SDKs, & 429 rate limit backoff\n"
+                "• Webhook HMAC SHA-256 verification\n"
+                "• Short link expiration, QR codes, & click analytics\n\n"
+                "I cannot assist with general creative writing, homework, or general trivia. "
+                "Please let me know if you have any questions regarding your Dub.co short links or domains!"
+            )
 
-        # Build the final answer sections
-        response_sections = []
+        return None
 
     def _build_telemetry_markdown(self, dns_diag: Dict[str, Any]) -> str:
         # Formats live DNS and SSL socket probe results into a clean markdown box
@@ -141,7 +167,7 @@ class DubSupportEngine:
         return "\n".join(lines)
 
     def _build_system_prompt(self, kb_matches: List[Dict[str, Any]], dns_diag: Optional[Dict[str, Any]] = None) -> str:
-        # Injects verified playbooks and telemetry into LLaMA 3.2
+        # Injects verified playbooks, strict scope boundaries, and telemetry into LLaMA 3.2
         kb_context = "\n\n".join([f"### {a['title']}\n{a['solution']}" for a in kb_matches[:3]])
         telemetry_txt = ""
         if dns_diag:
@@ -155,15 +181,18 @@ class DubSupportEngine:
             )
 
         return (
-            "You are DubPilot, the official AI Technical Support Engineer for Dub.co.\n"
-            "Answer the user's issue accurately, crisply, and authoritatively using the verified Dub.co context below.\n"
-            "STRICT RULES:\n"
+            "You are DubPilot, the dedicated AI Technical Support Engineer for Dub.co.\n\n"
+            "STRICT SCOPE BOUNDARY:\n"
+            "You ONLY answer questions about Dub.co infrastructure, link shortening, custom domain DNS (A record 76.76.21.21, CNAME cname.dub.co), SSL errors (Cloudflare 525, Let's Encrypt), Dub REST APIs/SDKs, webhooks, analytics, and self-hosting.\n\n"
+            "REFUSAL POLICY:\n"
+            "If the user asks about ANYTHING outside Dub.co (such as general knowledge, history, recipes, math/homework, general coding unrelated to Dub, creative writing, or chit-chat), you MUST politely refuse and state that you are specialized exclusively in Dub.co link infrastructure.\n\n"
+            "OFFICIAL DUB TECHNICAL SPECIFICATIONS:\n"
             "- Apex / Root domains: A Record pointing to 76.76.21.21.\n"
             "- Subdomains: CNAME record pointing to cname.dub.co.\n"
             "- Cloudflare Proxy: Grey Cloud (DNS Only) recommended, or SSL mode Full (Strict).\n"
             "- Rate Limits: Free=60/min, Pro=600/min, Business=1200/min. For batch, use POST /links/bulk.\n"
             "- Webhook verification: HMAC-SHA256 with Dub-Signature header.\n"
-            "- Structure your answer with bold headings, bullet points, and code blocks.\n\n"
+            "- Structure your answer with clean Markdown, bold headings, and bullet points.\n\n"
             f"VERIFIED DUB PLAYBOOKS:\n{kb_context}\n"
             f"{telemetry_txt}"
         )
@@ -179,6 +208,20 @@ class DubSupportEngine:
         Falls back to deterministic knowledge base resolution if Ollama is offline.
         """
         clean_query = user_query.strip()
+
+        # Security & Scope Guardrail check
+        guardrail_block = self.check_guardrail(clean_query)
+        if guardrail_block:
+            return {
+                "query": user_query,
+                "session_id": session_id,
+                "detected_domain": None,
+                "dns_diagnostic": None,
+                "solution_markdown": guardrail_block,
+                "articles_referenced": [],
+                "engine_used": "security_scope_guardrail",
+            }
+
         detected_domain = self.extract_domain(clean_query)
         dns_diag = None
 
@@ -266,6 +309,13 @@ class DubSupportEngine:
         """
         import asyncio
         clean_query = user_query.strip()
+
+        # Security & Scope Guardrail check
+        guardrail_block = self.check_guardrail(clean_query)
+        if guardrail_block:
+            yield guardrail_block
+            return
+
         detected_domain = self.extract_domain(clean_query)
         dns_diag = None
 
