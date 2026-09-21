@@ -6,3 +6,4 @@ __pycache__/
 *pitch*
 *.notes.md
 .env
+build_guide_pdf.py
