@@ -385,8 +385,25 @@
 
         bubble.innerHTML = parseMarkdown(accumulated);
       } catch (err) {
-        console.error("Chat error:", err);
-        bubble.innerHTML = "<p class='text-red-500 font-medium'>⚠️ Error streaming response from Dub Support API. Make sure the server is running.</p>";
+        console.warn("Streaming encountered error, trying standard resolution endpoint:", err);
+        try {
+          const fallbackRes = await fetch("/api/chat", {
+            method: "POST",
+            headers: { "Content-Type": "application/json" },
+            body: JSON.stringify({ query: text, session_id: sessionId })
+          });
+          if (fallbackRes.ok) {
+            const data = await fallbackRes.json();
+            if (data && data.solution_markdown) {
+              bubble.innerHTML = parseMarkdown(data.solution_markdown);
+              chatBox.scrollTop = chatBox.scrollHeight;
+              return;
+            }
+          }
+        } catch (fallbackErr) {
+          console.error("Fallback error:", fallbackErr);
+        }
+        bubble.innerHTML = "<p class='text-red-500 font-medium'>⚠️ Error connecting to Dub Support API. Make sure the server is running on localhost:8080.</p>";
       } finally {
         sendBtn.disabled = false;
         sendBtn.innerHTML = "<span>Resolve</span><span class='text-xs font-mono'>↵</span>";
