@@ -1,235 +1,260 @@
-# ⚡ DubPilot: Autonomous Support & Live DNS Diagnostic Co-Pilot for Dub.co
+# DubPilot
 
-> **Autonomous L1/L2 Technical Support Agent & Live DNS Diagnostic Engine engineered specifically for Dub.co (`dub.sh`).**  
-> Designed and built by **Himanshu Joshi ([@himanshu-xyz-1](https://github.com/himanshu-xyz-1))**.
+> Autonomous Technical Support & Live DNS Diagnostic Engine for [Dub.co](https://dub.co).  
+> **Live Demo:** [dubpilot.vercel.app](https://dubpilot.vercel.app) • **Source Code:** [github.com/himanshu-xyz-1/dubpilot](https://github.com/himanshu-xyz-1/dubpilot)  
+> Engineered by **Himanshu Joshi ([@himanshu-xyz-1](https://github.com/himanshu-xyz-1))**.
 
 [![FastAPI](https://img.shields.io/badge/FastAPI-0.110+-009688.svg)](https://fastapi.tiangolo.com/)
 [![Python 3.10+](https://img.shields.io/badge/Python-3.10+-3776AB.svg)](https://www.python.org/downloads/)
-[![LLM: Groq 120B](https://img.shields.io/badge/LLM-Groq%20Cloud%20120B-orange.svg)](https://groq.com/)
-[![Fallback: Ollama LLaMA 3.2](https://img.shields.io/badge/Fallback-Local%20Ollama%203.2-blue.svg)](https://ollama.ai/)
-[![Knowledge Base: 38 Playbooks](https://img.shields.io/badge/Knowledge%20Base-38%20Playbooks-blueviolet.svg)]()
-[![Chaos Testing](https://img.shields.io/badge/Resilience-State%20Manipulator-purple.svg)]()
-[![Streaming: SSE](https://img.shields.io/badge/Streaming-Server--Sent%20Events-FF6F00.svg)]()
-[![Live DNS Telemetry](https://img.shields.io/badge/Live%20Telemetry-Socket%20Level-blue.svg)]()
-[![Tests Passing](https://img.shields.io/badge/tests-10%2F10%20passing-brightgreen.svg)]()
-[![Docker](https://img.shields.io/badge/Docker-Ready-2496ED.svg?logo=docker&logoColor=white)]()
+[![Groq LPU](https://img.shields.io/badge/LLM-Groq%20Cloud-orange.svg)](https://groq.com/)
+[![Ollama Fallback](https://img.shields.io/badge/Fallback-Local%20Ollama-blue.svg)](https://ollama.ai/)
+[![Tests](https://img.shields.io/badge/tests-10%2F10%20passing-brightgreen.svg)]()
+[![Docker](https://img.shields.io/badge/Docker-Multi--stage-2496ED.svg?logo=docker&logoColor=white)]()
 [![License: MIT](https://img.shields.io/badge/License-MIT-yellow.svg)](LICENSE)
 
 ---
 
-## 🌟 Executive Summary & Problem Statement
+## Overview
 
-At **[Dub.co](https://dub.co)**, an agile, world-class team of under 15 engineers powers over 200 million link clicks every month. Because Dub does not maintain a massive, bureaucratic Tier-1 support center, founding engineers and leadership frequently jump into community Slack, Discord, and GitHub tickets to debug technical customer issues.
+[Dub.co](https://dub.co) is a high-scale link attribution platform serving hundreds of millions of clicks every month with a compact core team. A significant portion of developer support questions in community channels and issue trackers center around infrastructure edge cases:
 
-Over **80% of incoming developer support tickets** boil down to repetitive infrastructure edge cases:
+1. **Custom Domain DNS Configuration:** Subdomains not pointing to `cname.dub.co`, or apex domains missing the Anycast `A` record (`76.76.21.21`).
+2. **Cloudflare Proxy & SSL Handshakes:** Proxied (orange-cloud) setups triggering `Error 525: SSL Handshake Failed` due to origin encryption mismatches.
+3. **Webhook Security & HMAC:** Signature mismatch debugging on `link.clicked` and `link.created` event streams.
+4. **Base62 Slug Case-Sensitivity:** Queries regarding case-sensitive short link routing and root domain 404 redirects.
 
-1. **Custom Domain DNS Misconfigurations:**
-   - Apex domain A records not pointing to Dub's Anycast IP (`76.76.21.21`).
-   - Subdomain CNAME records pointing to generic hosts instead of `cname.dub.co`.
-   - Provider quirks like GoDaddy's duplicate subdomain issue where `links.brand.com` entered into the CNAME field creates `links.brand.com.brand.com`.
-2. **Cloudflare 525 Handshake & SSL Failures:**
-   - Users leaving Cloudflare Proxy turned on (**Orange Cloud**) without enabling "Full" or "Full (Strict)" SSL encryption on origin, triggering `Error 525 (SSL Handshake Failed)` or `ERR_SSL_PROTOCOL_ERROR`.
-3. **Short Link URL Case-Sensitivity & 404s (Issue #363):**
-   - Users assuming short URLs are case-insensitive when slugs are strictly case-sensitive in Base62 indexing (`/MyLink` vs `/mylink`).
-4. **Mobile Deep Linking & Custom URI Schemes (Issue #27, #2870):**
-   - Universal links (`apple-app-site-association`), Android App Links (`assetlinks.json`), and custom protocols (`spotify://`, `slack://`) failing to open native applications.
-5. **API Rate Limit Exceeded (HTTP 429) & Webhooks:**
-   - High-volume applications creating links sequentially without inspecting `Retry-After` headers, and developers debugging HMAC-SHA256 signature mismatches on real-time webhook events.
-6. **Docker Self-Hosting Configuration (Issues #12, #25):**
-   - Engineers self-hosting Dub facing Prisma migration, Redis queue, or Tinybird telemetry integration hurdles.
-
-**DubPilot** solves this by acting as an autonomous, real-time diagnostic co-pilot. Instead of regurgitating generic documentation, DubPilot **actively probes the user's domain over raw network sockets**, diagnoses the exact root cause in under 100 milliseconds, and streams a copy-paste remediation plan token-by-token.
+**DubPilot** is a dedicated diagnostic backend and chat interface designed to troubleshoot these problems automatically. Instead of returning generic documentation snippets, DubPilot **actively probes the user's domain over network sockets**, checks live DNS records and SSL handshakes, and provides exact, copy-paste remediation steps.
 
 ---
 
-## 🏗️ System Architecture
+## Product Integration: Where DubPilot Fits in Dub.co
+
+DubPilot is architected to integrate into Dub's existing developer touchpoints:
 
 ```
-                                  ┌──────────────────────────────────────────┐
-                                  │   Client Browser / Terminal / API Call   │
-                                  └────────────────────┬─────────────────────┘
-                                                       │
-                                   HTTP / SSE Stream   │  POST /api/chat/stream
-                                                       ▼
-┌────────────────────────────────────────────────────────────────────────────────────────────────────────┐
-│                                         DUBPILOT RESOLUTION CORE                                       │
-│                                                                                                        │
-│  ┌─────────────────────────────────┐                 ┌──────────────────────────────────────────────┐  │
-│  │   Regex Domain Extraction       │                 │       Deterministic Knowledge Base (RAG)     │  │
-│  │                                 │                 │                                              │  │
-│  │  • Detects apex or subdomain    │ ──────────────► │  • data/dub_knowledge_base.json              │  │
-│  │    (e.g., links.mybrand.com)    │                 │  • 38 verified Dub.co official playbooks     │  │
-│  │  • Strips protocols & paths     │                 │  • Zero LLM hallucination on exact DNS IPs   │  │
-│  └────────────────┬────────────────┘                 └──────────────────────┬───────────────────────┘  │
-│                   │                                                         │                          │
-│                   ▼                                                         ▼                          │
-│  ┌─────────────────────────────────────────────────────────┐ ┌─────────────────────────────────────────┐│
-│  │        Live Network Telemetry Engine (agent/tools.py)   │ │    Dual-Layer Security Guardrails     ││
-│  │                                                         │ │                                       ││
-│  │  • socket.getaddrinfo() ➔ Real-time DNS IP resolution   │ │  • Layer 1: 0ms Pre-LLM Injection /   ││
-│  │  • Cloudflare Proxy CIDR Inspector (Orange vs Grey)     │ │             Jailbreak / Scope Blocker ││
-│  │  • Port 443 Socket Handshake Probe (TLS verification)   │ │  • Layer 2: Strict Persona & Boundary ││
-│  │  • Webhook HMAC SHA-256 Verifier (Python / Node.js)     │ │             System Prompt             ││
-│  └────────────────┬────────────────────────────────────────┘ └───────────────────┬─────────────────────┘│
-│                   │                                                             │                      │
-│                   └──────────────────────────┬──────────────────────────────────┘                      │
-│                                              ▼                                                         │
-│  ┌──────────────────────────────────────────────────────────────────────────────────────────────────┐  │
-│  │                    Multi-Tier Unified LLM Engine & Chaos Resilience (agent/llm.py)               │  │
-│  │                                                                                                  │  │
-│  │  • Tier 1 (Primary):  Groq Cloud with `openai/gpt-oss-120b` (500+ tokens/sec, ultra-fast)        │  │
-│  │  • Tier 2 (Fallback): Local Ollama running `llama3.2:3b` (100% offline edge inference)           │  │
-│  │  • Tier 3 (Offline):  Deterministic Knowledge Base synthesizer                                   │  │
-│  │  • Session Memory:    Multi-turn conversation context tracking with 2-hour TTL                   │  │
-│  │  • Chaos Engineering: State Manipulator endpoint (`/api/dev/simulate`) for outage testing         │  │
-│  └────────────────┬─────────────────────────────────────────────────────────────────────────────────┘  │
-│                   │                                                                                    │
-│                   ▼                                                                                    │
-│  ┌──────────────────────────────────────────────────────────────────────────────────────────────────┐  │
-│  │                              Streaming Response Synthesizer (api/server.py)                      │  │
-│  │                                                                                                  │  │
-│  │  • Real-time Server-Sent Events (SSE) generator (`text/event-stream`)                            │  │
-│  │  • Dynamic live telemetry status box (Resolved IPs, Target Status, Cloudflare warnings)          │  │
-│  │  • Step-by-step resolution table with copy-paste DNS values & code snippets                      │  │
-│  └────────────────┬─────────────────────────────────────────────────────────────────────────────────┘  │
-└───────────────────┼────────────────────────────────────────────────────────────────────────────────────┘
-                    │
-                    ▼
-┌────────────────────────────────────────────────────────────────────────────────────────────────────────┐
-│                        DUB.CO SIGNATURE DESIGN SYSTEM WEB CLIENT (web/index.html)                      │
-│                                                                                                        │
-│  • Pure white background (#ffffff) with subtle 48px linear grid pattern                                │
-│  • High-contrast pitch-black accents (#09090b) and soft zinc-50 cards (#f4f4f5)                        │
-│  • Smooth token-by-token streaming with animated blinking caret (▋) & dynamic auto-scroll             │
-│  • Quick-action diagnostic pills for instant verification of frequent issues                          │
-│  • Live State Manipulator toggle: [Simulate Groq Outage] for instant fallback verification            │
-└────────────────────────────────────────────────────────────────────────────────────────────────────────┘
+                          ┌────────────────────────────────────────────────────────┐
+                          │                   Dub.co Touchpoints                   │
+                          └──────────────────────────┬─────────────────────────────┘
+                                                     │
+               ┌─────────────────────────────────────┼─────────────────────────────────────┐
+               │                                     │                                     │
+               ▼                                     ▼                                     ▼
+ ┌───────────────────────────┐         ┌───────────────────────────┐         ┌───────────────────────────┐
+ │   Dashboard Domain Tab    │         │     Webhook Playground    │         │  Community Support Bot    │
+ │ (dub.co/settings/domains) │         │(dub.co/settings/webhooks) │         │  (Discord / Slack / GH)   │
+ │                           │         │                           │         │                           │
+ │ Embedded self-serve DNS   │         │ Interactive HMAC-SHA256   │         │ Autonomous triage bot     │
+ │ diagnostic widget to test │         │ payload validator for     │         │ that runs live socket     │
+ │ failing records in-place. │         │ developer event debugging.│         │ probes on shared domains. │
+ └─────────────┬─────────────┘         └─────────────┬─────────────┘         └─────────────┬─────────────┘
+               │                                     │                                     │
+               └─────────────────────────────────────┼─────────────────────────────────────┘
+                                                     │
+                                                     ▼
+                                   ┌───────────────────────────────────┐
+                                   │      DubPilot Core Engine         │
+                                   │ (FastAPI + DNS Sockets + Fallback)│
+                                   └───────────────────────────────────┘
+```
+
+1. **In-Dashboard Domain Diagnostic Widget:** Embedded inside `dub.co/dashboard/settings/domains`. When a custom domain fails verification, users can click "Diagnose Domain" to immediately run socket checks against Dub's Anycast IP (`76.76.21.21`) or CNAME (`cname.dub.co`).
+2. **Developer Webhook Testing Playground:** Embedded inside `dub.co/dashboard/settings/webhooks` to validate signatures and debug payload delivery in Node.js, Python, or Go.
+3. **Automated First-Responder Bot:** Connected to Dub's community Discord and GitHub Discussions to parse user queries, execute non-invasive DNS probes, and provide immediate setup instructions.
+
+---
+
+## Architecture & Provider Fallback
+
+DubPilot uses a three-tier execution hierarchy to ensure high availability:
+
+```
+                            POST /api/chat/stream
+                                      │
+                                      ▼
+                      ┌─────────────────────────────────┐
+                      │  Security & Pre-Filter Layer    │
+                      │  • Injection / scope checks     │
+                      │  • Regex domain extraction      │
+                      └───────────────┬─────────────────┘
+                                      │
+                                      ▼
+                      ┌─────────────────────────────────┐
+                      │    Live Telemetry Subsystem     │
+                      │  • socket.getaddrinfo() (DNS)   │
+                      │  • Port 443 TLS handshake probe │
+                      │  • Webhook HMAC-SHA256 verifier │
+                      └───────────────┬─────────────────┘
+                                      │
+                                      ▼
+                      ┌─────────────────────────────────┐
+                      │   Multi-Tier Provider Engine    │
+                      │                                 │
+                      │  Tier 1: Groq Cloud (120B model)│
+                      │    │ (on timeout/outage)        │
+                      │    ▼                            │
+                      │  Tier 2: Local Ollama (LLaMA 3.2│
+                      │    │ (if offline)               │
+                      │    ▼                            │
+                      │  Tier 3: Deterministic Playbook │
+                      └───────────────┬─────────────────┘
+                                      │
+                                      ▼
+                      ┌─────────────────────────────────┐
+                      │  SSE Token Streaming Generator  │
+                      │      (text/event-stream)        │
+                      └─────────────────────────────────┘
+```
+
+* **Tier 1 (Primary):** Groq Cloud running `openai/gpt-oss-120b` for low-latency token streaming.
+* **Tier 2 (Edge / Local Fallback):** Local Ollama running `llama3.2:3b` for offline inference.
+* **Tier 3 (Offline Deterministic):** Rule-based synthesis using Dub's verified knowledge base when no LLM provider is reachable.
+* **Failover Simulation:** Built-in developer endpoint (`POST /api/dev/simulate`) to test provider transitions without dropping active connections.
+
+---
+
+## Knowledge Base Grounding & Verification
+
+DubPilot's response synthesizer is grounded in **38 structured playbooks** indexed in `data/dub_knowledge_base.json`. Each playbook was verified against official [Dub.co Documentation](https://dub.co/docs):
+
+### Representative Playbook Examples
+
+```json
+// Example 1: Apex Domain Routing (Verified against dub.co/docs/custom-domains)
+{
+  "id": "custom_domain_apex_a_record",
+  "title": "Apex / Root Custom Domain Configuration",
+  "problem": "How to configure a root apex domain (e.g. brand.com) with Dub?",
+  "required_record": {
+    "type": "A",
+    "host": "@",
+    "value": "76.76.21.21",
+    "purpose": "Points apex traffic directly to Dub's global Anycast routing edge"
+  }
+}
+```
+
+```json
+// Example 2: Subdomain Configuration (Verified against dub.co/docs/custom-domains)
+{
+  "id": "custom_domain_subdomain_cname",
+  "title": "Subdomain CNAME Routing",
+  "problem": "How to configure a subdomain (e.g. links.brand.com, go.brand.com)?",
+  "required_record": {
+    "type": "CNAME",
+    "host": "links (or subdomain prefix)",
+    "value": "cname.dub.co",
+    "purpose": "Routes subdomain requests to Dub's multi-tenant ingress"
+  }
+}
+```
+
+```json
+// Example 3: Cloudflare Proxy SSL Handshake (Verified against dub.co/docs/custom-domains/cloudflare)
+{
+  "id": "cloudflare_proxy_status",
+  "title": "Cloudflare Proxy 525 Handshake Troubleshooting",
+  "problem": "Cloudflare Error 525 (SSL Handshake Failed) on custom domain.",
+  "resolution": "Set Cloudflare SSL/TLS encryption mode to 'Full' or 'Full (Strict)', or toggle proxy status to DNS-Only (Grey Cloud) to let Dub provision native Let's Encrypt certificates."
+}
 ```
 
 ---
 
-## 📋 Diagnostics & Playbooks Matrix (38 Real GitHub Scenarios)
+## Live Diagnostics Engine (`agent/tools.py`)
 
-DubPilot contains **38 pre-indexed, verified troubleshooting playbooks** across 6 key infrastructure pillars:
+DubPilot includes three diagnostic tools:
 
-| Category | Real Issues Covered | Key Signals | Automated Remediation Plan |
-| :--- | :--- | :--- | :--- |
-| **Custom Domains & DNS** | Apex A-records, Subdomain CNAMEs, GoDaddy duplicate hostnames, Namecheap Advanced DNS, Cloudflare Proxy 525, DNS propagation | `brand.com`, `links.brand.com`, `76.76.21.21`, `cname.dub.co`, `525 Handshake` | Runs live socket probe; determines Apex vs Subdomain; flags Cloudflare orange cloud; outputs exact records to configure. |
-| **Routing, Slugs & Links** | Slug case-sensitivity (#363), 404 fallback URL (#2384), Mobile Deep Linking (#27, #2870), Link expiration, Password protection | `case sensitive`, `404 redirect`, `app deep link`, `universal link`, `assetlinks.json` | Explains Base62 slug routing; provides dashboard steps for Default Redirect 404; generates deep link URI schemes. |
-| **Link Preview & Social Cards** | OpenGraph image scraping (#427), Twitter card cache invalidation, Dynamic OG rendering | `OG image not showing`, `metatag scrape`, `twitter card cache` | Outlines Dub's metatag bot behavior; provides Facebook/LinkedIn debugger URLs; inspects image headers. |
-| **API, SDKs & Webhooks** | HTTP 429 rate limit backoff, HMAC SHA-256 verification, CSV export pagination (#97), Workspace API tokens (#4533) | `429 Too Many Requests`, `Retry-After`, `HMAC signature`, `CSV export limit` | Generates exponential backoff loop; provides copy-paste Python & Node.js HMAC verification; details pagination limits. |
-| **Conversion & Analytics** | Stripe conversion tracking (#3752), UTM campaigns & tagging (#725), QR code SVG logo scannability (#1083) | `Stripe webhook conversion`, `UTM campaign`, `QR code scan error` | Guides Stripe customer ID linkage; structures UTM parameters; explains QR error correction level (H/Q). |
-| **Self-Hosting & Deployments** | Docker Compose setup (#12, #25), Prisma migration sync (#378), Tinybird telemetry credentials | `docker compose up`, `prisma migrate`, `tinybird self host` | Details full Docker stack configuration, Redis cache requirements, and env variable specifications. |
+1. **DNS Record Inspection (`check_domain_dns`):**
+   * Resolves `A` and `CNAME` records using raw socket lookups.
+   * Compares resolved targets against Dub's Anycast IP (`76.76.21.21`) and CNAME (`cname.dub.co`).
+   * Detects whether Cloudflare Proxying (Orange Cloud) is active on the domain.
 
----
+2. **SSL Handshake Probe (`check_domain_ssl`):**
+   * Establishes a TLS connection to port 443 of the target domain.
+   * Inspects certificate subject and validity to identify provisioning delays or expired certificates.
 
-## 🛡️ Dual-Layer Security & Scope Guardrails
-
-To ensure safety, prevent prompt injection, and guarantee zero compute waste on non-technical queries, DubPilot implements a strict two-tier defense:
-
-1. **Layer 1: Deterministic Pre-LLM Guardrail (`0ms latency, zero compute wasted`)**
-   - Intercepts known injection vectors (`"ignore previous instructions"`, `"DAN"`, `"jailbreak"`, `"system prompt"`, `"unrestricted mode"`).
-   - Filters out non-technical, out-of-scope requests (e.g. poetry, cooking recipes, school homework, politics).
-   - Returns an immediate polite security notice explaining DubPilot's dedicated operational scope.
-2. **Layer 2: System Persona & Domain Boundary**
-   - The LLM's system prompt enforces a strict identity as an Autonomous Support Engineer for Dub.co.
-   - Refuses any instruction to drift outside Dub.co's link management, DNS, analytics, or developer APIs.
+3. **Webhook HMAC Cryptography (`verify_webhook_hmac`):**
+   * Implements constant-time SHA-256 HMAC verification (`hmac.compare_digest`) to validate webhook signatures from Dub event notifications without timing vulnerability risks.
 
 ---
 
-## 🧪 Chaos Engineering & State Manipulator
+## Limitations & Operational Scope
 
-DubPilot includes a built-in **State Manipulator** (`POST /api/dev/simulate`, `GET /api/dev/state`) and a dedicated frontend chaos toggle:
-
-- **Simulate Groq Outage:** Simulates a 500 error or network outage on Groq Cloud. DubPilot instantly switches to **Local Ollama (`llama3.2:3b`)** without dropping the user's connection.
-- **Restore Primary:** One click restores primary routing to Groq Cloud (500+ tokens/sec).
-- **Simulate Offline:** If both external and local LLMs are unreachable, DubPilot gracefully falls back to deterministic RAG synthesis with full DNS diagnostics.
-
----
-
-## 🎨 Signature UI Design System
-
-DubPilot's frontend is strictly modeled on Dub.co's clean, minimalist aesthetic:
-
-- **Canvas:** Pure white canvas (`#ffffff`) overlaid with a delicate 48px grid (`rgba(0,0,0,0.04)`).
-- **Brand Mark:** Clean pitch-black **`DP`** logo badge with rounded corners and `for Dub.co` context pill.
-- **Typography:** `Plus Jakarta Sans` for razor-sharp geometric headings and UI text; `JetBrains Mono` for DNS records, CLI commands, and code blocks.
-- **Contrast Hierarchy:** Pitch-black buttons and user chat bubbles (`#09090b`), soft rounded zinc cards for assistant responses (`#f4f4f5`), and 1px borders (`#e4e4e7`).
-- **Streaming Experience:** Real-time token delivery via Server-Sent Events (SSE) with an animated blinking cursor (`▋`) and dynamic auto-scroll.
-- **Multi-Turn History:** Session memory preserved across tab refreshes using local session identifiers.
+| Category | In Scope | Out of Scope |
+| :--- | :--- | :--- |
+| **DNS & Networking** | Apex `A` records (`76.76.21.21`), Subdomain `CNAME` (`cname.dub.co`), Cloudflare 525 errors, SSL port 443 checks. | Modifying registrar DNS records on the user's behalf (requires user access to their DNS provider). |
+| **Link Configuration** | Base62 case sensitivity, 404 default redirects, mobile deep linking (`apple-app-site-association`), UTM parameters. | Inspecting private analytics databases or customer click history. |
+| **Developer APIs** | HTTP 429 rate limit backoff strategies, pagination, HMAC-SHA256 signature verification code. | Generating or revoking live production API keys. |
+| **Account & Billing** | General feature availability, pricing tier limits from public docs. | Private account access, invoice disputes, workspace deletion (deferred to `support@dub.co`). |
 
 ---
 
-## ⚡ Quickstart & Local Setup
+## Quickstart & Local Setup
 
 ### 1. Prerequisites
-- Python 3.10 or higher (Python 3.14 fully supported)
-- Optional: [Groq API Key](https://console.groq.com) for 500+ tokens/sec cloud inference
+- Python 3.10+
+- Optional: [Groq API Key](https://console.groq.com) for cloud inference
 - Optional: [Ollama](https://ollama.ai) with `llama3.2:3b` for local offline fallback
 
-### 2. Clone & Setup Environment
+### 2. Installation
+
 ```bash
 # Clone the repository
 git clone https://github.com/himanshu-xyz-1/dubpilot.git
 cd dubpilot
 
-# Create virtual environment
+# Create and activate virtual environment
 python3 -m venv .venv
 source .venv/bin/activate
 
 # Install dependencies
-pip install fastapi uvicorn httpx pytest
+pip install -r requirements.txt
 ```
 
-### 3. Configure Environment (Optional for Groq Cloud)
+### 3. Configuration (Optional)
+
 Create a `.env` file in the root directory:
 ```bash
 GROQ_API_KEY=gsk_your_groq_api_key_here
 ```
-*(Note: If no API key is provided, DubPilot seamlessly routes to local Ollama or deterministic RAG fallback).*
+*(If no API key is set, DubPilot automatically falls back to local Ollama or deterministic playbook resolution).*
 
 ### 4. Run Automated Tests
+
 ```bash
-PYTHONPATH=. pytest tests/ -v
+pytest tests/ -v
 ```
-**Test Results:** `10/10 passed (100% test coverage across knowledge base, DNS resolver, SSL probe, HMAC verification, real GitHub playbooks, security guardrails, and chaos state manipulator)`.
 
-### 5. Launch DubPilot Server
+**Test Suite Scope (10 Tests):**
+* Knowledge base schema integrity and article count
+* Broken link diagnostic matching
+* Constant-time HMAC-SHA256 webhook signature validation
+* Real socket DNS resolution
+* Apex A-record (`76.76.21.21`) configuration responses
+* Cloudflare Error 525 troubleshooting output
+* REST & SSE streaming API endpoints (`/health`, `/api/chat`, `/api/chat/stream`, `/api/dns`, `/api/ssl`, `/api/verify-webhook`)
+* Real GitHub issue scenario resolutions (slugs, deep links, Docker self-hosting, CSV export)
+* Security guardrails and out-of-scope prompt filtering
+* Provider failover simulation and state manipulator (`/api/dev/simulate`)
 
-#### Option A: Native Python
+### 5. Start the Server
+
 ```bash
+# Native Python
 python run.py
-```
 
-#### Option B: 1-Click via Docker Compose
-```bash
-docker compose up -d
-```
-
-#### Option C: Standalone Docker Run
-```bash
+# Or with Docker
 docker build -t dubpilot:latest .
-docker run -d -p 8080:8080 --name dubpilot-app dubpilot:latest
+docker run -p 8080:8080 dubpilot:latest
 ```
 
-Output:
-```text
-============================================================
-🚀 DubPilot server is starting up...
-• Web UI:  http://localhost:8080
-• Swagger: http://localhost:8080/docs
-============================================================
-```
-
-Open your browser at **[http://localhost:8080](http://localhost:8080)** to interact with DubPilot!
+Open **[http://localhost:8080](http://localhost:8080)** in your browser.
 
 ---
 
-## 🌐 API Reference
+## API Reference
 
 ### 1. Real-Time Token Streaming (SSE)
-Streams tokens word-by-word via Server-Sent Events.
-
 - **Endpoint:** `POST /api/chat/stream`
 - **Headers:** `Content-Type: application/json`
 
@@ -239,11 +264,8 @@ curl -N -X POST http://localhost:8080/api/chat/stream \
   -d '{"query": "my domain links.acmecorp.com is showing Cloudflare 525 error", "session_id": "sess_demo"}'
 ```
 
-### 2. Standard JSON Chat Endpoint
-Returns complete markdown resolution with telemetry metadata.
-
+### 2. Standard JSON Chat
 - **Endpoint:** `POST /api/chat`
-- **Headers:** `Content-Type: application/json`
 
 ```bash
 curl -X POST http://localhost:8080/api/chat \
@@ -251,82 +273,61 @@ curl -X POST http://localhost:8080/api/chat \
   -d '{"query": "How do I configure my apex domain mycompany.com?"}'
 ```
 
-### 3. State Manipulator Chaos Simulation
-Dynamically simulate upstream outages to verify fallback behavior.
-
+### 3. Failover Simulation
 - **Endpoint:** `POST /api/dev/simulate`
 
 ```bash
-# Simulate Groq Cloud outage
+# Toggle simulated provider outage
 curl -X POST http://localhost:8080/api/dev/simulate \
   -H "Content-Type: application/json" \
   -d '{"simulate_groq_failure": true}'
-
-# Restore Groq Cloud
-curl -X POST http://localhost:8080/api/dev/simulate \
-  -H "Content-Type: application/json" \
-  -d '{"simulate_groq_failure": false}'
 ```
 
-### 4. Direct Live DNS Telemetry
-Runs immediate socket-level inspection on any domain.
-
+### 4. Direct DNS Telemetry
 - **Endpoint:** `GET /api/dns?domain=links.dub.sh`
 
 ```bash
-curl -s "http://localhost:8080/api/dns?domain=links.dub.sh" | jq .
+curl -s "http://localhost:8080/api/dns?domain=links.dub.sh"
 ```
 
 ---
 
-## 📁 Repository Structure
+## Project Structure
 
 ```
 dubpilot/
 ├── agent/
-│   ├── engine.py             # Autonomous triage, domain extraction, RAG & security guardrails
-│   ├── llm.py                # Unified LLM provider (Groq 120B + Ollama fallback + Session Memory)
-│   └── tools.py              # Live socket DNS resolver, SSL port 443 probe & HMAC verifier
+│   ├── engine.py             # Diagnostic triage, domain extraction, RAG & guardrails
+│   ├── llm.py                # Multi-tier provider routing (Groq, Ollama, Playbook)
+│   └── tools.py              # DNS socket resolver, SSL port 443 probe & HMAC verifier
 ├── api/
-│   └── server.py             # FastAPI REST, SSE streaming & State Manipulator simulation routes
+│   ├── server.py             # FastAPI REST & SSE streaming routes
+│   └── index.py              # Vercel serverless entrypoint
 ├── data/
-│   └── dub_knowledge_base.json # 38 verified Dub.co official troubleshooting playbooks
+│   └── dub_knowledge_base.json # 38 verified Dub.co troubleshooting playbooks
 ├── web/
-│   └── index.html            # Signature Dub light-mode client with live streaming & chaos toggle
+│   └── index.html            # Dub-styled web interface with live streaming
 ├── tests/
-│   └── test_agent.py         # 10/10 Pytest verification suite
-├── run.py                    # Server entrypoint launcher
-├── Dockerfile                # Production non-root multi-stage container build
-├── docker-compose.yml        # 1-click execution & host Ollama network bridge
-├── .dockerignore             # Optimized build context filtering
-├── requirements.txt          # Production dependencies
-├── .gitignore                # Protects environment keys (.env) and Python artifacts
-└── README.md                 # Complete technical documentation
+│   └── test_agent.py         # 10 automated test suites
+├── Dockerfile                # Production multi-stage container build
+├── docker-compose.yml        # Docker execution with host network bridge
+├── requirements.txt          # Python dependencies
+├── pytest.ini                # Pytest configuration
+├── vercel.json               # Vercel deployment routing
+└── README.md                 # Project documentation
 ```
 
 ---
 
-## 📈 Performance & Telemetry Benchmarks
+## Author
 
-- **Groq Cloud Token Velocity:** `~520 tokens/sec` via `openai/gpt-oss-120b`.
-- **DNS Socket Resolution Latency:** `~42ms` (tested against global Anycast infrastructure).
-- **Time to First Token (TTFT):** `<15ms` via local Server-Sent Events (SSE).
-- **Memory Footprint:** Under `48MB RSS` server-side overhead.
-- **Failover Recovery Time:** `<5ms` automatic shift from primary Groq to local Ollama on simulated outage.
-- **Reliability:** 100% deterministic accuracy for official Dub.co Anycast IPs (`76.76.21.21` & `cname.dub.co`).
+**Himanshu Joshi** ([@himanshu-xyz-1](https://github.com/himanshu-xyz-1))  
+- GitHub: [https://github.com/himanshu-xyz-1](https://github.com/himanshu-xyz-1)  
+- Repository: [https://github.com/himanshu-xyz-1/dubpilot](https://github.com/himanshu-xyz-1/dubpilot)  
+- Live Deployment: [https://dubpilot.vercel.app](https://dubpilot.vercel.app)
 
 ---
 
-## 👨‍💻 Author & Engineering Context
+## License
 
-Engineered from scratch by **Himanshu Joshi** ([@himanshu-xyz-1](https://github.com/himanshu-xyz-1)).  
-Built as a demonstration of applied AI systems engineering, low-latency networking, and autonomous developer tooling for high-scale tech products.
-
-- **GitHub:** [https://github.com/himanshu-xyz-1](https://github.com/himanshu-xyz-1)
-- **Repository:** [https://github.com/himanshu-xyz-1/dubpilot](https://github.com/himanshu-xyz-1/dubpilot)
-
----
-
-## 📜 License
-
-MIT License. Free to fork, modify, and extend.
+MIT License. Free to use, modify, and distribute.
