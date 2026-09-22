@@ -34,15 +34,13 @@ app.add_middleware(
 @app.middleware("http")
 async def handle_vercel_rewrites(request, call_next):
     """
-    On Vercel serverless, requests rewritten from /api/(.*) arrive with scope['path'] = '/api/index.py'.
-    The real user-requested route is passed in headers like 'x-matched-path' or 'x-forwarded-uri'.
+    On Vercel serverless, requests rewritten to /api/index.py pass the target path in __path__.
     This middleware restores the original requested path for FastAPI routing.
     """
-    matched = request.headers.get("x-matched-path") or request.headers.get("x-forwarded-uri")
-    if matched:
-        clean = matched.split("?")[0]
-        if clean and clean != "/api/index.py":
-            request.scope["path"] = clean
+    custom_path = request.query_params.get("__path__")
+    if custom_path:
+        clean = "/" + custom_path.lstrip("/").split("?")[0]
+        request.scope["path"] = clean
     return await call_next(request)
 
 # Initialize the support engine
