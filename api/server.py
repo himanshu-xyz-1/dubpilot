@@ -73,6 +73,7 @@ SimulationStateRequest.model_rebuild()
 
 
 @app.get("/health")
+@app.get("/api/health")
 def health_check():
     """Simple health check endpoint returning service status and LLM availability."""
     return {
@@ -86,12 +87,14 @@ def health_check():
     }
 
 
+@app.get("/dev/state")
 @app.get("/api/dev/state")
 def get_simulation_state():
     """Returns the current state of LLM providers and active simulation overrides."""
     return engine.llm.get_simulation_state()
 
 
+@app.post("/dev/simulate")
 @app.post("/api/dev/simulate")
 def set_simulation_state(req: SimulationStateRequest):
     """
@@ -109,6 +112,7 @@ def set_simulation_state(req: SimulationStateRequest):
     }
 
 
+@app.get("/dns")
 @app.get("/api/dns")
 def test_dns(domain: str):
     """Checks DNS records for a domain in real time."""
@@ -117,6 +121,7 @@ def test_dns(domain: str):
     return check_domain_dns(domain.strip())
 
 
+@app.get("/ssl")
 @app.get("/api/ssl")
 def test_ssl(domain: str):
     """Tests the SSL certificate on port 443 of a domain."""
@@ -125,6 +130,7 @@ def test_ssl(domain: str):
     return check_domain_ssl(domain.strip())
 
 
+@app.post("/verify-webhook")
 @app.post("/api/verify-webhook")
 def verify_webhook(req: WebhookVerifyRequest):
     """Verifies that a webhook was actually sent by Dub.co."""
@@ -136,6 +142,7 @@ def verify_webhook(req: WebhookVerifyRequest):
     }
 
 
+@app.post("/chat")
 @app.post("/api/chat")
 def handle_chat(req: ChatRequest):
     """Answers a question using LLaMA 3.2 with verified Dub.co context and DNS telemetry."""
@@ -157,6 +164,7 @@ async def sse_chat_generator(query: str, session_id: Optional[str] = None):
     yield "data: [DONE]\n\n"
 
 
+@app.post("/chat/stream")
 @app.post("/api/chat/stream")
 async def handle_chat_stream(req: ChatRequest):
     """Streams the response in real time via Server-Sent Events."""
