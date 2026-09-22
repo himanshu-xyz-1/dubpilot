@@ -253,11 +253,32 @@
       localStorage.setItem("dubpilot_session_id", sessionId);
     }
 
-    // Configure marked to render single line breaks as <br>
-    marked.setOptions({
-      breaks: true,
-      gfm: true
-    });
+    // Safe markdown parser helper with fallback
+    function parseMarkdown(text) {
+      if (typeof marked !== "undefined") {
+        try {
+          if (typeof marked.parse === "function") {
+            return marked.parse(text);
+          } else if (typeof marked === "function") {
+            return marked(text);
+          }
+        } catch (e) {
+          console.warn("Markdown parse warning:", e);
+        }
+      }
+      // Fallback: simple text with newlines if marked CDN is unreachable
+      return text
+        .replace(/&/g, "&amp;")
+        .replace(/</g, "&lt;")
+        .replace(/>/g, "&gt;")
+        .replace(/\n/g, "<br>");
+    }
+
+    try {
+      if (typeof marked !== "undefined" && typeof marked.setOptions === "function") {
+        marked.setOptions({ breaks: true, gfm: true });
+      }
+    } catch (e) {}
 
     function appendMessage(role, content, isMarkdown = false) {
       const isUser = role === "user";
@@ -274,7 +295,7 @@
         : "bg-zinc-50 border border-zinc-200/90 rounded-2xl rounded-tl-xs p-5 text-sm text-zinc-800 max-w-[90%] leading-relaxed shadow-xs markdown-body";
 
       if (isMarkdown && !isUser) {
-        bubble.innerHTML = marked.parse(content);
+        bubble.innerHTML = parseMarkdown(content);
       } else {
         bubble.innerText = content;
       }
@@ -326,6 +347,10 @@
           body: JSON.stringify({ query: text, session_id: sessionId })
         });
 
+        if (!response.ok) {
+          throw new Error("HTTP error " + response.status);
+        }
+
         const reader = response.body.getReader();
         const decoder = new TextDecoder();
         let buffer = "";
@@ -349,17 +374,18 @@
 
             try {
               const parsed = JSON.parse(dataStr);
-              if (parsed.token) {
+              if (parsed.token !== undefined) {
                 accumulated += parsed.token;
-                bubble.innerHTML = marked.parse(accumulated) + '<span class="cursor-blink"></span>';
+                bubble.innerHTML = parseMarkdown(accumulated) + '<span class="cursor-blink"></span>';
                 chatBox.scrollTop = chatBox.scrollHeight;
               }
             } catch (err) {}
           }
         }
 
-        bubble.innerHTML = marked.parse(accumulated);
+        bubble.innerHTML = parseMarkdown(accumulated);
       } catch (err) {
+        console.error("Chat error:", err);
         bubble.innerHTML = "<p class='text-red-500 font-medium'>⚠️ Error streaming response from Dub Support API. Make sure the server is running.</p>";
       } finally {
         sendBtn.disabled = false;

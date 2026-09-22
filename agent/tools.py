@@ -31,8 +31,8 @@ def check_domain_dns(domain: str) -> Dict[str, Any]:
     }
 
     try:
-        # Set a 3-second safety timeout on network socket calls
-        socket.setdefaulttimeout(3.0)
+        # Set a 1.5-second safety timeout on network socket calls so lookups fail fast
+        socket.setdefaulttimeout(1.5)
         # Ask the operating system to resolve the domain's IPv4 address
         addr_info = socket.getaddrinfo(clean_domain, 80, socket.AF_INET, socket.SOCK_STREAM)
         ips = list(set([item[4][0] for item in addr_info]))
