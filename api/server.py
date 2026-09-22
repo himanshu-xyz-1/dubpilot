@@ -31,6 +31,20 @@ app.add_middleware(
     allow_headers=["*"],
 )
 
+@app.middleware("http")
+async def handle_vercel_rewrites(request, call_next):
+    """
+    On Vercel serverless, requests rewritten from /api/(.*) arrive with scope['path'] = '/api/index.py'.
+    The real user-requested route is passed in headers like 'x-matched-path' or 'x-forwarded-uri'.
+    This middleware restores the original requested path for FastAPI routing.
+    """
+    matched = request.headers.get("x-matched-path") or request.headers.get("x-forwarded-uri")
+    if matched:
+        clean = matched.split("?")[0]
+        if clean and clean != "/api/index.py":
+            request.scope["path"] = clean
+    return await call_next(request)
+
 # Initialize the support engine
 engine = DubSupportEngine()
 
@@ -159,8 +173,6 @@ async def handle_chat_stream(req: ChatRequest):
 
 
 @app.get("/", response_class=HTMLResponse)
-@app.get("/api", response_class=HTMLResponse)
-@app.get("/api/index.py", response_class=HTMLResponse)
 def serve_ui():
     """Serves the main web interface."""
     web_file = os.path.join(os.path.dirname(__file__), "..", "web", "index.html")
