@@ -5,6 +5,7 @@ networking, SSL/DNS, CPU, and upstream API failures.
 Dispatches live webhooks to Amber SRE engine and maintains real-time state for UI.
 """
 
+import os
 from datetime import datetime, timezone
 import logging
 from typing import Any, Dict, List, Optional
