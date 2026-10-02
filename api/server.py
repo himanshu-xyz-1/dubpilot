@@ -110,6 +110,54 @@ def set_simulation_state(req: SimulationStateRequest):
     }
 
 
+from api.sre_simulator import (
+    get_all_scenarios,
+    get_current_sre_status,
+    trigger_scenario,
+    remediate_active_incident,
+)
+
+
+class SRETriggerRequest(BaseModel):
+    scenario_id: str = Field(..., description="ID of the SRE incident scenario to trigger")
+
+
+@app.get("/api/sre/scenarios")
+def list_sre_scenarios():
+    """Returns all 20 real-world production SRE incident scenarios."""
+    return {"scenarios": get_all_scenarios()}
+
+
+@app.get("/api/sre/status")
+def get_sre_status():
+    """Returns current real-time SRE cluster status and metrics."""
+    return get_current_sre_status()
+
+
+@app.post("/api/sre/simulate")
+async def simulate_sre_incident(req: SRETriggerRequest):
+    """Triggers an SRE scenario and notifies Amber SRE Engine via webhook."""
+    try:
+        return await trigger_scenario(req.scenario_id)
+    except ValueError as e:
+        raise HTTPException(status_code=404, detail=str(e))
+
+
+@app.post("/api/sre/simulate/{scenario_id}")
+async def simulate_sre_incident_by_id(scenario_id: str):
+    """Triggers an SRE scenario by path ID."""
+    try:
+        return await trigger_scenario(scenario_id)
+    except ValueError as e:
+        raise HTTPException(status_code=404, detail=str(e))
+
+
+@app.post("/api/sre/remediate")
+def handle_sre_remediation(data: Optional[dict] = None):
+    """Receives remediation callback from Amber SRE engine when approved."""
+    return remediate_active_incident(data or {})
+
+
 @app.get("/dns")
 @app.get("/api/dns")
 def test_dns(domain: str):
