@@ -122,18 +122,21 @@ class SRETriggerRequest(BaseModel):
     scenario_id: str = Field(..., description="ID of the SRE incident scenario to trigger")
 
 
+@app.get("/sre/scenarios")
 @app.get("/api/sre/scenarios")
 def list_sre_scenarios():
     """Returns all 20 real-world production SRE incident scenarios."""
     return {"scenarios": get_all_scenarios()}
 
 
+@app.get("/sre/status")
 @app.get("/api/sre/status")
 def get_sre_status():
     """Returns current real-time SRE cluster status and metrics."""
     return get_current_sre_status()
 
 
+@app.post("/sre/simulate")
 @app.post("/api/sre/simulate")
 async def simulate_sre_incident(req: SRETriggerRequest):
     """Triggers an SRE scenario and notifies Amber SRE Engine via webhook."""
@@ -143,6 +146,7 @@ async def simulate_sre_incident(req: SRETriggerRequest):
         raise HTTPException(status_code=404, detail=str(e))
 
 
+@app.post("/sre/simulate/{scenario_id}")
 @app.post("/api/sre/simulate/{scenario_id}")
 async def simulate_sre_incident_by_id(scenario_id: str):
     """Triggers an SRE scenario by path ID."""
@@ -152,6 +156,7 @@ async def simulate_sre_incident_by_id(scenario_id: str):
         raise HTTPException(status_code=404, detail=str(e))
 
 
+@app.post("/sre/remediate")
 @app.post("/api/sre/remediate")
 def handle_sre_remediation(data: Optional[dict] = None):
     """Receives remediation callback from Amber SRE engine when approved."""
