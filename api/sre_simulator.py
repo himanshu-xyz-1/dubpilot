@@ -324,7 +324,8 @@ async def trigger_scenario(scenario_id: str, amber_webhook_url: str = "https://t
                 "proposed_tool": target["remediation_tool"],
             }
         }
-        async with httpx.AsyncClient(timeout=5.0) as client:
+        errors = []
+        async with httpx.AsyncClient(timeout=8.0, verify=False) as client:
             for url in urls_to_try:
                 try:
                     resp = await client.post(url, json=payload)
@@ -333,16 +334,10 @@ async def trigger_scenario(scenario_id: str, amber_webhook_url: str = "https://t
                         amber_response = resp.json()
                         logger.info(f"Successfully alerted Amber SRE at {url}")
                         break
-                except Exception:
-                    continue
-                try:
-                    resp = await client.post(url, json=payload)
-                    if resp.status_code in [200, 201, 202]:
-                        webhook_dispatched = True
-                        amber_response = resp.json()
-                        logger.info(f"Successfully alerted Amber SRE at {url}")
-                        break
-                except Exception:
+                    else:
+                        errors.append(f"{url} returned status {resp.status_code}")
+                except Exception as ex:
+                    errors.append(f"{url} error: {str(ex)}")
                     continue
     except Exception as e:
         logger.warning(f"Could not reach Amber webhook: {e}")
@@ -352,6 +347,7 @@ async def trigger_scenario(scenario_id: str, amber_webhook_url: str = "https://t
         "incident": _active_incident,
         "amber_alert_dispatched": webhook_dispatched,
         "amber_response": amber_response,
+        "delivery_errors": errors if not webhook_dispatched else [],
     }
 
 
